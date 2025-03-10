@@ -40,7 +40,7 @@ const ManualInputView: React.FC<ManualInputViewProps> = ({
         value={textValue}
         onChange={(e) => onTextChange(e.target.value)}
         placeholder="Enter text..."
-        sx={{ mb: 2 }}
+        sx={{ mb: 2, width: '610px'  }}
       />
 
       <Typography
@@ -73,7 +73,12 @@ const ManualInputView: React.FC<ManualInputViewProps> = ({
           size="small"
           value={metadataKey}
           onChange={(e) => onMetadataKeyChange(e.target.value)}
-          sx={{ width: "160px" }}
+          sx={{ 
+            width: "120px",
+            '& .MuiOutlinedInput-root': {
+              height: '32px'
+            }
+          }}
         />
         
         <Typography
@@ -93,14 +98,19 @@ const ManualInputView: React.FC<ManualInputViewProps> = ({
           size="small"
           value={metadataValue}
           onChange={(e) => onMetadataValueChange(e.target.value)}
-          sx={{ width: "346px" }}
+          sx={{ 
+            width: "280px",
+            '& .MuiOutlinedInput-root': {
+              height: '32px'
+            }
+          }}
         />
         
         <IconButton
           sx={{
             backgroundColor: "#00B373",
             color: "#fff",
-            borderRadius: 2,
+            borderRadius: 1,
             height: 40,
             width: 40,
             ml: 1,

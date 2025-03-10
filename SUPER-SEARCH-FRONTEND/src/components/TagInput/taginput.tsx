@@ -58,12 +58,12 @@ const TagInput: React.FC<TagInputProps> = ({
         </Typography>
       )}
       <TextField
-        fullWidth
         placeholder={placeholder}
         value={inputValue}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         size="small"
+        sx={{ width: '610px' }}
       />
       {tags.length > 0 && (
         <Box mt={'21px'}>

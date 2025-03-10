@@ -24,6 +24,8 @@ const TabSwitcherMUI: React.FC<TabSwitcherMUIProps> = ({ activeTab, onChangeTab 
           position: 'relative',
           '& .MuiTab-root': {
             marginRight: '11px',
+            minHeight: 'unset', 
+            padding: '12px 0', 
             '&:last-child': {
               marginRight: 0  
             }
@@ -34,14 +36,12 @@ const TabSwitcherMUI: React.FC<TabSwitcherMUIProps> = ({ activeTab, onChangeTab 
           label="Manual Input"
           sx={{
             boxSizing: 'border-box',
-            width: '320.5px',
-            height: '20px',
+            width: '300px',
+            height: '32px',
             backgroundColor: activeTab === "MANUAL" ? "#000000" : "#FFFFFF",
             color: activeTab === "MANUAL" ? "#FFFFFF" : "#000000",
             borderRadius: '5px',
             border: '1px solid #000000',
-            fontSize: '20px',
-            lineHeight: '24px',
             textTransform: 'none',
             '&:hover': {
               backgroundColor: activeTab === "MANUAL" ? "#000000" : "#FFFFFF",
@@ -52,14 +52,12 @@ const TabSwitcherMUI: React.FC<TabSwitcherMUIProps> = ({ activeTab, onChangeTab 
           label="Auto Scan"
           sx={{
             boxSizing: 'border-box',
-            width: '320.5px', 
-            height: '20px',
+            width: '300px', 
+            height: '32px', 
             backgroundColor: activeTab === "AUTO" ? "#000000" : "#FFFFFF",
             color: activeTab === "AUTO" ? "#FFFFFF" : "#000000",
             borderRadius: '5px',
             border: '1px solid #000000',
-            fontSize: '20px',
-            lineHeight: '24px',
             textTransform: 'none',
             '&:hover': {
               backgroundColor: activeTab === "AUTO" ? "#000000" : "#FFFFFF",
