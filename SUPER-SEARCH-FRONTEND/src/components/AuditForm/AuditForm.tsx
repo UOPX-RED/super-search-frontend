@@ -42,10 +42,14 @@ const AuditForm: React.FC = () => {
   };
 
   const submitAudit = async (data: unknown) => {
-    console.log(data);
+    const token = localStorage.getItem("userToken");
+    if (token) {
+      axios.defaults.headers.common["X-Azure-Token"] = token;
+    }
     try {
-      const response = await axios.post("http://localhost:8000/analyze", data);
-      console.log(response.data);
+      const response = await axios.post(`/api/analyze`, data);
+      // reroute user to the audit results page
+      window.location.href = `/results/${response.data.id}`;
     } catch (error) {
       console.error("Error submitting audit", error);
     }

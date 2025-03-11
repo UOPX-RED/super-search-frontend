@@ -1,48 +1,18 @@
 import React from "react";
-// import { Container, Box, Paper } from "@mui/material";
 import AuditForm from "../components/AuditForm/AuditForm";
+import Header from "../components/./AuditForm/Header/Header";
 
 const Home: React.FC = () => {
   return (
-    // <Box
-    //   sx={{
-    //     display: 'flex',
-    //     minHeight: '100vh',
-    //     width: '100%',
-    //     alignItems: 'center',
-    //     justifyContent: 'center',
-    //     backgroundColor: '#ffffff',
-    //     py: 4,
-    //   }}
-    // >
-    //   <Container
-    //     maxWidth="md"
-    //     sx={{
-    //       display: 'flex',
-    //       justifyContent: 'center',
-    //       alignItems: 'center',
-    //     }}
-    //   >
-    //     <Paper
-    //       elevation={3}
-    //       sx={{
-    //         p: 4,
-    //         width: '100%',
-    //         maxWidth: '900px',
-    //         borderRadius: 2,
-    //         boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.12)',
-    //         border: '3px solid #e0e0e0',
-    //       }}
-    //     >
-    //       <AuditForm />
-    //     </Paper>
-    //   </Container>
-    // </Box>
-    <main className="p-4">
-      <div className="bg-white border-2 flex">
-        <AuditForm />
-      </div>
-    </main>
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="bg-white shadow sm:rounded-lg">
+          <AuditForm />
+        </div>
+      </main>
+    </div>
   );
 };
 
