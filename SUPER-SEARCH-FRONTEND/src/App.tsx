@@ -62,10 +62,11 @@ function App() {
 
   const redirectToLogin = async () => {
     try {
+      const apiUrl = import.meta.env.VITE_BACKEND_URL;
       const baseUrl =
         window.location.hostname === "localhost"
           ? "http://localhost:8000"
-          : window.location.origin;
+          : apiUrl;
 
       window.location.href = `${baseUrl}/auth/init`;
     } catch (error) {
