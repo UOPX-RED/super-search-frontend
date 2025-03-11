@@ -10,7 +10,7 @@ interface StoreState {
   setApiResult: (result: ApiResult) => void;
 }
 
-interface ApiResult {
+export interface ApiResult {
   id: string;
   request_id: string;
   source_id: string;

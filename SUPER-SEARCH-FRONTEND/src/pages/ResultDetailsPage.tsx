@@ -1,114 +1,32 @@
 import React from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Box, Paper, Typography, Stack, Chip, Container } from "@mui/material";
 import ErrorIcon from "@mui/icons-material/Error";
 import HighlightedSectionCard from "../components/HighlightedSectionCard/HighlightedSectionCard";
 import useSearchStore from "../stores/useStore";
 
-const mockDetailDataItems = {
-  "course-123": {
-    id: "course-123",
-    type: "course",
-    title: "CJS/221: Introduction to Criminal Justice",
-    matchedKeywords: ["Diversity", "Equity"],
-    allKeywords: ["Diversity", "Equity", "Inclusion", "DEI"],
-    originalText: `This course provides an introduction to the criminal justice system, with particular emphasis on understanding diverse perspectives and equitable approaches to law enforcement. Students will examine how social factors influence criminal behavior and the justice system's response.`,
-    additionalInfo: {
-      contentType: "course",
-      author: "Prof. James Wilson",
-      createdOn: "09/01/2023",
-      department: "Criminal Justice",
-    },
-    highlightedSections: [
-      {
-        matchedWord: "Diversity",
-        confidence: "89%",
-        matchedText: `Students will examine how social factors influence criminal behavior and the justice system's response.`,
-        reason: `This section acknowledges how different social factors affect the criminal justice system, recognizing the diversity of experiences and perspectives.`,
-      },
-      {
-        matchedWord: "Equity",
-        confidence: "92%",
-        matchedText: `This course emphasizes understanding equitable approaches to law enforcement.`,
-        reason: `The text directly addresses equity in the context of law enforcement approaches, highlighting the importance of fair treatment.`,
-      },
-    ],
-  },
-  "policy-789": {
-    id: "policy-789",
-    type: "policy",
-    title: "Grievance Policy Document",
-    matchedKeywords: ["DEI"],
-    allKeywords: ["Diversity", "Equity", "Inclusion", "DEI"],
-    originalText: `Our university is committed to creating opportunities for all students, regardless of their background. We have implemented several programs to ensure equal access to resources and support services for traditionally underserved populations. Our goal is to build a community where everyone feels welcome and valued, and where diverse perspectives enhance the learning experience for all.`,
-    additionalInfo: {
-      contentType: "policy",
-      author: "University Administration",
-      createdOn: "05/15/2023",
-      department: "Office of Student Affairs",
-    },
-    highlightedSections: [
-      {
-        matchedWord: "DEI",
-        confidence: "95%",
-        matchedText: `Our university is committed to creating opportunities for all students, regardless of their background.`,
-        reason: `This statement encompasses the core principles of Diversity, Equity, and Inclusion by committing to support students of all backgrounds.`,
-      },
-    ],
-  },
-};
-
-const defaultMockData = {
-  id: "policy-doc-123",
-  type: "policy",
-  title: "Policy-doc-123",
-  matchedKeywords: ["Equity", "Inclusion", "Diversity"],
-  allKeywords: ["Equity", "Inclusion", "Diversity", "DEI"],
-  originalText: `Our university is committed to creating opportunities for all students, regardless of their background. We have implemented several programs to ensure equal access to resources and support services for traditionally underserved populations. Our goal is to build a community where everyone feels welcome and valued, and where diverse perspectives enhance the learning experience for all.`,
-  additionalInfo: {
-    contentType: "policy",
-    author: "University Administration",
-    createdOn: "05/15/2023",
-    department: "Office of Student Affairs",
-  },
-  highlightedSections: [
-    {
-      matchedWord: "Equity",
-      confidence: "92%",
-      matchedText: `We have implemented several programs to ensure equal access to resources for all students...`,
-      reason: `This text specifically addresses the concept of providing equal access to resources for underserved populations, which is a core element of equity.`,
-    },
-    {
-      matchedWord: "Inclusion",
-      confidence: "85%",
-      matchedText: `Our goal is to build a community where everyone feels welcome and valued...`,
-      reason: `This section directly addresses inclusion by discussing creating a welcoming environment for all.`,
-    },
-  ],
-};
-
 const ResultDetailsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
-
-  const detailData =
-    id && id in mockDetailDataItems
-      ? mockDetailDataItems[id as keyof typeof mockDetailDataItems]
-      : defaultMockData;
-
-  const {
-    title,
-    matchedKeywords,
-    originalText,
-    additionalInfo,
-    highlightedSections,
-  } = detailData;
-
   const { apiResult } = useSearchStore.getState();
-  console.log("API Result:", apiResult);
+
+  if (!apiResult) {
+    return (
+      <Box
+        sx={{
+          width: "100%",
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Typography variant="h6">Loading...</Typography>
+      </Box>
+    );
+  }
 
   const handleBack = () => {
-    navigate("/results");
+    navigate("/");
   };
 
   return (
@@ -181,9 +99,9 @@ const ResultDetailsPage: React.FC = () => {
                   mb: 3,
                 }}
               >
-                {title}
+                Request: {apiResult.request_id}
               </Typography>
-              {matchedKeywords.length > 0 && (
+              {apiResult.keywords_matched.length > 0 && (
                 <ErrorIcon sx={{ color: "#B3261E", mb: 3 }} />
               )}
             </Box>
@@ -196,7 +114,7 @@ const ResultDetailsPage: React.FC = () => {
                 color: "#3C3C3C",
               }}
             >
-              Highlighted Sections ({highlightedSections.length})
+              Highlighted Sections ({apiResult?.highlighted_sections.length})
             </Typography>
           </Box>
 
@@ -219,11 +137,11 @@ const ResultDetailsPage: React.FC = () => {
                     mb: 1,
                   }}
                 >
-                  Keywords matched ({matchedKeywords.length})
+                  Keywords matched ({apiResult.keywords_matched.length})
                 </Typography>
 
                 <Box display="flex" gap={1} flexWrap="wrap">
-                  {matchedKeywords.map((kw) => (
+                  {apiResult.keywords_matched.map((kw) => (
                     <Chip
                       key={`matched-${kw}`}
                       label={kw}
@@ -262,7 +180,7 @@ const ResultDetailsPage: React.FC = () => {
                     lineHeight: 1.5,
                   }}
                 >
-                  {originalText}
+                  {apiResult.original_text}
                 </Typography>
               </Box>
 
@@ -288,7 +206,7 @@ const ResultDetailsPage: React.FC = () => {
                       Content type:
                     </Typography>{" "}
                     <Typography variant="body2" display="inline">
-                      {additionalInfo.contentType}
+                      {/* {apiResult.metadata.contentType} */}
                     </Typography>
                   </Box>
                   <Box sx={{ mb: 1 }}>
@@ -300,7 +218,7 @@ const ResultDetailsPage: React.FC = () => {
                       Author:
                     </Typography>{" "}
                     <Typography variant="body2" display="inline">
-                      {additionalInfo.author}
+                      {/* {apiResult.metadata.author} */}
                     </Typography>
                   </Box>
                   <Box sx={{ mb: 1 }}>
@@ -312,7 +230,7 @@ const ResultDetailsPage: React.FC = () => {
                       Created On:
                     </Typography>{" "}
                     <Typography variant="body2" display="inline">
-                      {additionalInfo.createdOn}
+                      {/* {apiResult.metadata.createdOn} */}
                     </Typography>
                   </Box>
                   <Box sx={{ mb: 1 }}>
@@ -324,7 +242,7 @@ const ResultDetailsPage: React.FC = () => {
                       Department:
                     </Typography>{" "}
                     <Typography variant="body2" display="inline">
-                      {additionalInfo.department}
+                      {/* {apiResult.metadata.department} */}
                     </Typography>
                   </Box>
                 </Box>
@@ -338,12 +256,12 @@ const ResultDetailsPage: React.FC = () => {
               }}
             >
               <Stack spacing={2}>
-                {highlightedSections.map((section, idx) => (
+                {apiResult.highlighted_sections.map((section, idx) => (
                   <HighlightedSectionCard
                     key={idx}
-                    matchedWord={section.matchedWord}
+                    matchedWord={apiResult.keywords_matched}
                     confidence={section.confidence}
-                    matchedText={section.matchedText}
+                    matchedText={section.matched_text}
                     reason={section.reason}
                   />
                 ))}
