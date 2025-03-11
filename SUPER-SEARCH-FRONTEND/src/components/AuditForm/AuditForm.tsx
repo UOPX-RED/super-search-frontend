@@ -21,6 +21,10 @@ const AuditForm: React.FC = () => {
   const [metadataValue, setMetadataValue] = useState("");
 
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  
+  const isFormValid = activeTab === "MANUAL" 
+    ? manualText.trim() !== "" && keywords.length > 0 
+    : selectedCourses.length > 0 && keywords.length > 0;
 
   const handleAddTag = (tag: string) => {
     setKeywords((prev) => [...prev, tag]);
@@ -45,6 +49,8 @@ const AuditForm: React.FC = () => {
   };
 
   const submitAudit = async (data: unknown) => {
+    if (!isFormValid) return;
+    
     const token = localStorage.getItem("userToken");
     if (token) {
       axios.defaults.headers.common["X-Azure-Token"] = token;
@@ -72,8 +78,14 @@ const AuditForm: React.FC = () => {
         Audit Your Learning Materials
       </Typography>
 
+      <Box sx={{ display: "flex", alignItems: "center" }}>
+        <Typography variant="subtitle1" sx={{ mr: 1 }}>
+          Keywords to identify
+          <span style={{ color: "red" }}>*</span>
+        </Typography>
+      </Box>
       <TagInput
-        label="Keywords to identify"
+        label=""
         tags={keywords}
         onAddTag={handleAddTag}
         onRemoveTag={handleRemoveTag}
@@ -91,6 +103,7 @@ const AuditForm: React.FC = () => {
         }}
       >
         Sources to analyze
+        <span style={{ color: "red" }}>*</span>
       </Typography>
 
       <Box mt={2}>
@@ -127,17 +140,21 @@ const AuditForm: React.FC = () => {
         >
           <Button
             variant="contained"
-            onClick={() =>
+            onClick={() => {
+              const finalMetadataKey = metadataKey.trim() || "programId";
+              const finalMetadataValue = metadataValue.trim() || "FIN-PM-001";
+              
               submitAudit({
                 source_id: "123",
                 content_type: "program",
                 text: manualText,
                 keywords,
                 metadata: {
-                  [metadataKey]: metadataValue,
+                  [finalMetadataKey]: finalMetadataValue,
                 },
               })
-            }
+            }}
+            disabled={!isFormValid}
             sx={{
               backgroundColor: "#0CBC8B",
               color: "#FFFFFF",
@@ -150,6 +167,10 @@ const AuditForm: React.FC = () => {
               boxShadow: "0px 4px 10px rgba(12, 188, 139, 0.3)",
               "&:hover": {
                 backgroundColor: "#0aa87a",
+              },
+              "&:disabled": {
+                backgroundColor: "#cccccc",
+                color: "#666666",
               },
             }}
           >
