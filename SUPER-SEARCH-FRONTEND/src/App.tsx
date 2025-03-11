@@ -63,12 +63,12 @@ function App() {
   const redirectToLogin = async () => {
     try {
       const apiUrl = import.meta.env.VITE_BACKEND_URL;
-      const baseUrl =
-        window.location.hostname === "localhost"
-          ? "http://localhost:8000"
-          : apiUrl;
+      // const baseUrl =
+      //   window.location.hostname === "localhost"
+      //     ? "http://localhost:8000"
+      //     : apiUrl;
 
-      window.location.href = `${baseUrl}/auth/init`;
+      window.location.href = `${apiUrl}/api/auth/init`;
     } catch (error) {
       console.error("Login redirect error:", error);
     }

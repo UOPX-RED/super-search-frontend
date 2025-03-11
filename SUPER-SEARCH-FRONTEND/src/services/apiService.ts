@@ -32,11 +32,11 @@ apiService.interceptors.response.use(
       const apiUrl = import.meta.env.VITE_BACKEND_URL;
       localStorage.setItem("lastRoute", window.location.pathname);
 
-      const baseUrl =
-        window.location.hostname === "localhost"
-          ? "http://localhost:8000"
-          : apiUrl;
-      window.location.href = `${baseUrl}/auth/init`;
+      // const baseUrl =
+      //   window.location.hostname === "localhost"
+      //     ? "http://localhost:8000"
+      //     : apiUrl;
+      window.location.href = `${apiUrl}/api/auth/init`;
     }
     return Promise.reject(error);
   }

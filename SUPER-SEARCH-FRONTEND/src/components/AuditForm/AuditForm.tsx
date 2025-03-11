@@ -50,7 +50,8 @@ const AuditForm: React.FC = () => {
       axios.defaults.headers.common["X-Azure-Token"] = token;
     }
     try {
-      const response = await axios.post(`/api/analyze`, data);
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+      const response = await axios.post(`${BACKEND_URL}/api/analyze`, data);
       console.log("Audit submitted successfully", response.data);
 
       // upload results to zustand store
