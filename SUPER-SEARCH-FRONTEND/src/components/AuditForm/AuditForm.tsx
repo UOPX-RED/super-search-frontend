@@ -6,10 +6,13 @@ import ManualInputView from "../ManualInputView/ManualInputView";
 import AutoScanView from "../AutoScanView/AutoScanView";
 import axios from "axios";
 
+import useSearchStore from "../../stores/useStore";
+
 const DUMMY_COURSES = ["CJS/221", "CPSS/332", "HEA/731", "SWRK/350"];
 
 const AuditForm: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"MANUAL" | "AUTO">("MANUAL");
+  const { setApiResult } = useSearchStore.getState();
 
   const [keywords, setKeywords] = useState<string[]>([]);
 
@@ -42,10 +45,21 @@ const AuditForm: React.FC = () => {
   };
 
   const submitAudit = async (data: unknown) => {
-    console.log(data);
+    const token = localStorage.getItem("userToken");
+    if (token) {
+      axios.defaults.headers.common["X-Azure-Token"] = token;
+    }
     try {
-      const response = await axios.post("http://localhost:8000/analyze", data);
-      console.log(response.data);
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+      const response = await axios.post(`${BACKEND_URL}/api/analyze`, data);
+      console.log("Audit submitted successfully", response.data);
+
+      // upload results to zustand store
+      setApiResult(response.data);
+
+      setTimeout(() => {
+        window.location.href = `/results/${response.data.id}`;
+      }, 1000);
     } catch (error) {
       console.error("Error submitting audit", error);
     }

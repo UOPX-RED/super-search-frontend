@@ -15,23 +15,25 @@ const KeywordsMatchedHeader: React.FC<{
   allKeywords: string[];
   showUnmatched?: boolean;
 }> = ({ matchedKeywords, allKeywords, showUnmatched = false }) => {
-  const unmatched = showUnmatched ? allKeywords.filter(kw => !matchedKeywords.includes(kw)) : [];
-  
+  const unmatched = showUnmatched
+    ? allKeywords.filter((kw) => !matchedKeywords.includes(kw))
+    : [];
+
   return (
     <Box mb={2}>
-      <Typography 
-        variant="body2" 
-        sx={{ 
+      <Typography
+        variant="body2"
+        sx={{
           fontFamily: "Inter, sans-serif",
           fontWeight: 600,
           fontSize: "16px",
           color: "#3C3C3C",
-          mb: 1 
+          mb: 1,
         }}
       >
         Keywords matched ({matchedKeywords.length}/{allKeywords.length})
       </Typography>
-      
+
       <Box display="flex" gap={1} flexWrap="wrap">
         {matchedKeywords.map((kw) => (
           <Chip
@@ -47,28 +49,28 @@ const KeywordsMatchedHeader: React.FC<{
             }}
           />
         ))}
-        
-        {showUnmatched && unmatched.map((kw) => (
-          <Chip
-            key={`unmatched-${kw}`}
-            label={kw}
-            sx={{
-              backgroundColor: "#3C3C3C",
-              color: "#FFFFFF",
-              fontWeight: 500,
-              fontSize: "14px",
-              height: "28px",
-              borderRadius: "14px",
-            }}
-          />
-        ))}
+
+        {showUnmatched &&
+          unmatched.map((kw) => (
+            <Chip
+              key={`unmatched-${kw}`}
+              label={kw}
+              sx={{
+                backgroundColor: "#3C3C3C",
+                color: "#FFFFFF",
+                fontWeight: 500,
+                fontSize: "14px",
+                height: "28px",
+                borderRadius: "14px",
+              }}
+            />
+          ))}
       </Box>
     </Box>
   );
 };
 
 const ResultCard: React.FC<ResultCardProps> = ({
-  id,
   type,
   title,
   matchedKeywords,
@@ -93,11 +95,11 @@ const ResultCard: React.FC<ResultCardProps> = ({
       }}
     >
       <Box>
-        <Typography 
-          variant="caption" 
-          sx={{ 
+        <Typography
+          variant="caption"
+          sx={{
             fontWeight: 600,
-            display: 'block',
+            display: "block",
             mb: 1.5,
             fontSize: "14px",
             color: "#3C3C3C",
@@ -108,7 +110,7 @@ const ResultCard: React.FC<ResultCardProps> = ({
 
         <Typography
           variant="body1"
-          sx={{ 
+          sx={{
             fontFamily: "Inter, sans-serif",
             fontWeight: 600,
             color: "#919090",
@@ -120,7 +122,7 @@ const ResultCard: React.FC<ResultCardProps> = ({
           {title}
         </Typography>
 
-        <KeywordsMatchedHeader 
+        <KeywordsMatchedHeader
           matchedKeywords={matchedKeywords}
           allKeywords={allKeywords}
           showUnmatched={true}
