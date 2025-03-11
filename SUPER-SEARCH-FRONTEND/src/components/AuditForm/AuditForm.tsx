@@ -11,12 +11,7 @@ const DUMMY_COURSES = ["CJS/221", "CPSS/332", "HEA/731", "SWRK/350"];
 const AuditForm: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"MANUAL" | "AUTO">("MANUAL");
 
-  const [keywords, setKeywords] = useState<string[]>([
-    "Diversity",
-    "Equity",
-    "Inclusion",
-    "DEI",
-  ]);
+  const [keywords, setKeywords] = useState<string[]>([]);
 
   const [manualText, setManualText] = useState("");
   const [metadataKey, setMetadataKey] = useState("");
@@ -46,7 +41,7 @@ const AuditForm: React.FC = () => {
     );
   };
 
-  const submitAudit = async (data) => {
+  const submitAudit = async (data: unknown) => {
     console.log(data);
     try {
       const response = await axios.post("http://localhost:8000/analyze", data);
@@ -57,7 +52,8 @@ const AuditForm: React.FC = () => {
   };
 
   return (
-    <Box sx={{ width: "100%", maxWidth: "800px", mx: "auto", p: 3 }}>
+    // <Box sx={{ width: "100%", maxWidth: "800px", mx: "auto", p: 3 }}>
+    <div className="px-8 py-10">
       <Typography variant="h4" gutterBottom>
         Audit Your Learning Materials
       </Typography>
@@ -147,7 +143,8 @@ const AuditForm: React.FC = () => {
           </Button>
         </Box>
       </Box>
-    </Box>
+    </div>
+    // </Box>
   );
 };
 
