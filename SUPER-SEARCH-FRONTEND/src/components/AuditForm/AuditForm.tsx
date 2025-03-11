@@ -1,25 +1,17 @@
 import React, { useState } from "react";
-import {
-  Box,
-  Typography,
-  Button,
-} from "@mui/material";
-import TabSwitcherMUI from "../TabSwitcher/tabswitcher"; 
-import TagInput from "../TagInput/taginput"; 
+import { Box, Typography, Button } from "@mui/material";
+import TabSwitcherMUI from "../TabSwitcher/tabswitcher";
+import TagInput from "../TagInput/taginput";
 import ManualInputView from "../ManualInputView/ManualInputView";
 import AutoScanView from "../AutoScanView/AutoScanView";
+import axios from "axios";
 
 const DUMMY_COURSES = ["CJS/221", "CPSS/332", "HEA/731", "SWRK/350"];
 
 const AuditForm: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"MANUAL" | "AUTO">("MANUAL");
 
-  const [keywords, setKeywords] = useState<string[]>([
-    "Diversity",
-    "Equity",
-    "Inclusion",
-    "DEI",
-  ]);
+  const [keywords, setKeywords] = useState<string[]>([]);
 
   const [manualText, setManualText] = useState("");
   const [metadataKey, setMetadataKey] = useState("");
@@ -49,8 +41,19 @@ const AuditForm: React.FC = () => {
     );
   };
 
+  const submitAudit = async (data: unknown) => {
+    console.log(data);
+    try {
+      const response = await axios.post("http://localhost:8000/analyze", data);
+      console.log(response.data);
+    } catch (error) {
+      console.error("Error submitting audit", error);
+    }
+  };
+
   return (
-    <Box sx={{ width: "100%", maxWidth: "800px", mx: "auto", p: 3 }}>
+    // <Box sx={{ width: "100%", maxWidth: "800px", mx: "auto", p: 3 }}>
+    <div className="px-8 py-10">
       <Typography variant="h4" gutterBottom>
         Audit Your Learning Materials
       </Typography>
@@ -62,14 +65,14 @@ const AuditForm: React.FC = () => {
         onRemoveTag={handleRemoveTag}
       />
 
-      <Typography 
-        variant="subtitle2" 
-        sx={{ 
-          fontFamily: 'Inter, sans-serif',
-          fontStyle: 'normal',
+      <Typography
+        variant="subtitle2"
+        sx={{
+          fontFamily: "Inter, sans-serif",
+          fontStyle: "normal",
           fontWeight: 500,
-          fontSize: '24px',
-          color: '#3C3C3C',
+          fontSize: "24px",
+          color: "#3C3C3C",
           mt: 6,
         }}
       >
@@ -78,8 +81,8 @@ const AuditForm: React.FC = () => {
 
       <Box mt={2}>
         <TabSwitcherMUI activeTab={activeTab} onChangeTab={setActiveTab} />
-        
-        <Box sx={{ minHeight: "200px", mb: 1 }}> 
+
+        <Box sx={{ minHeight: "200px", mb: 1 }}>
           {activeTab === "MANUAL" ? (
             <ManualInputView
               textValue={manualText}
@@ -99,8 +102,8 @@ const AuditForm: React.FC = () => {
           )}
         </Box>
 
-        <Box 
-          display="flex" 
+        <Box
+          display="flex"
           justifyContent="left"
           sx={{
             width: "100%",
@@ -110,6 +113,17 @@ const AuditForm: React.FC = () => {
         >
           <Button
             variant="contained"
+            onClick={() =>
+              submitAudit({
+                source_id: "123",
+                content_type: "program",
+                text: manualText,
+                keywords,
+                metadata: {
+                  [metadataKey]: metadataValue,
+                },
+              })
+            }
             sx={{
               backgroundColor: "#0CBC8B",
               color: "#FFFFFF",
@@ -129,7 +143,8 @@ const AuditForm: React.FC = () => {
           </Button>
         </Box>
       </Box>
-    </Box>
+    </div>
+    // </Box>
   );
 };
 
