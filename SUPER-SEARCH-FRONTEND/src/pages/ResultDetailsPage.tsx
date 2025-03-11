@@ -1,15 +1,9 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  Box,
-  Paper,
-  Typography,
-  Stack,
-  Chip,
-  Container,
-} from "@mui/material";
-import ErrorIcon from "@mui/icons-material/Error"; 
+import { Box, Paper, Typography, Stack, Chip, Container } from "@mui/material";
+import ErrorIcon from "@mui/icons-material/Error";
 import HighlightedSectionCard from "../components/HighlightedSectionCard/HighlightedSectionCard";
+import useSearchStore from "../stores/useStore";
 
 const mockDetailDataItems = {
   "course-123": {
@@ -59,7 +53,7 @@ const mockDetailDataItems = {
         confidence: "95%",
         matchedText: `Our university is committed to creating opportunities for all students, regardless of their background.`,
         reason: `This statement encompasses the core principles of Diversity, Equity, and Inclusion by committing to support students of all backgrounds.`,
-      }
+      },
     ],
   },
 };
@@ -96,10 +90,11 @@ const defaultMockData = {
 const ResultDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  
-  const detailData = id && id in mockDetailDataItems 
-    ? mockDetailDataItems[id as keyof typeof mockDetailDataItems] 
-    : defaultMockData;
+
+  const detailData =
+    id && id in mockDetailDataItems
+      ? mockDetailDataItems[id as keyof typeof mockDetailDataItems]
+      : defaultMockData;
 
   const {
     title,
@@ -108,6 +103,9 @@ const ResultDetailsPage: React.FC = () => {
     additionalInfo,
     highlightedSections,
   } = detailData;
+
+  const { apiResult } = useSearchStore.getState();
+  console.log("API Result:", apiResult);
 
   const handleBack = () => {
     navigate("/results");
@@ -136,10 +134,10 @@ const ResultDetailsPage: React.FC = () => {
             boxShadow: "0px 8px 24px rgba(0, 0, 0, 0.12)",
           }}
         >
-          <Box 
-            sx={{ 
+          <Box
+            sx={{
               display: "flex",
-              mb: 2
+              mb: 2,
             }}
           >
             <Typography
@@ -156,7 +154,7 @@ const ResultDetailsPage: React.FC = () => {
               back
             </Typography>
           </Box>
-          
+
           <Box
             sx={{
               display: "flex",
@@ -186,10 +184,10 @@ const ResultDetailsPage: React.FC = () => {
                 {title}
               </Typography>
               {matchedKeywords.length > 0 && (
-                <ErrorIcon sx={{ color: "#B3261E", mb: 3 }} /> 
+                <ErrorIcon sx={{ color: "#B3261E", mb: 3 }} />
               )}
             </Box>
-            
+
             <Typography
               variant="subtitle1"
               sx={{
@@ -211,19 +209,19 @@ const ResultDetailsPage: React.FC = () => {
           >
             <Box sx={{ flex: 1 }}>
               <Box mb={2}>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
+                <Typography
+                  variant="body2"
+                  sx={{
                     fontFamily: "Inter, sans-serif",
                     fontWeight: 600,
                     fontSize: "16px",
                     color: "#3C3C3C",
-                    mb: 1 
+                    mb: 1,
                   }}
                 >
                   Keywords matched ({matchedKeywords.length})
                 </Typography>
-                
+
                 <Box display="flex" gap={1} flexWrap="wrap">
                   {matchedKeywords.map((kw) => (
                     <Chip
@@ -255,7 +253,7 @@ const ResultDetailsPage: React.FC = () => {
                   Original Text
                 </Typography>
                 <Typography
-                  variant='body2'
+                  variant="body2"
                   sx={{
                     fontFamily: "Inter, sans-serif",
                     fontSize: "16px",
@@ -282,7 +280,11 @@ const ResultDetailsPage: React.FC = () => {
                 </Typography>
                 <Box sx={{ mt: 2 }}>
                   <Box sx={{ mb: 1 }}>
-                    <Typography variant="body2" fontWeight={600} display="inline">
+                    <Typography
+                      variant="body2"
+                      fontWeight={600}
+                      display="inline"
+                    >
                       Content type:
                     </Typography>{" "}
                     <Typography variant="body2" display="inline">
@@ -290,7 +292,11 @@ const ResultDetailsPage: React.FC = () => {
                     </Typography>
                   </Box>
                   <Box sx={{ mb: 1 }}>
-                    <Typography variant="body2" fontWeight={600} display="inline">
+                    <Typography
+                      variant="body2"
+                      fontWeight={600}
+                      display="inline"
+                    >
                       Author:
                     </Typography>{" "}
                     <Typography variant="body2" display="inline">
@@ -298,7 +304,11 @@ const ResultDetailsPage: React.FC = () => {
                     </Typography>
                   </Box>
                   <Box sx={{ mb: 1 }}>
-                    <Typography variant="body2" fontWeight={600} display="inline">
+                    <Typography
+                      variant="body2"
+                      fontWeight={600}
+                      display="inline"
+                    >
                       Created On:
                     </Typography>{" "}
                     <Typography variant="body2" display="inline">
@@ -306,7 +316,11 @@ const ResultDetailsPage: React.FC = () => {
                     </Typography>
                   </Box>
                   <Box sx={{ mb: 1 }}>
-                    <Typography variant="body2" fontWeight={600} display="inline">
+                    <Typography
+                      variant="body2"
+                      fontWeight={600}
+                      display="inline"
+                    >
                       Department:
                     </Typography>{" "}
                     <Typography variant="body2" display="inline">

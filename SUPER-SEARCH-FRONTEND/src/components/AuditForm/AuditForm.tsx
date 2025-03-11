@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Typography, Button } from "@mui/material";
 import TabSwitcherMUI from "../TabSwitcher/tabswitcher";
 import TagInput from "../TagInput/taginput";
@@ -6,10 +6,13 @@ import ManualInputView from "../ManualInputView/ManualInputView";
 import AutoScanView from "../AutoScanView/AutoScanView";
 import axios from "axios";
 
+import useSearchStore from "../../stores/useStore";
+
 const DUMMY_COURSES = ["CJS/221", "CPSS/332", "HEA/731", "SWRK/350"];
 
 const AuditForm: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"MANUAL" | "AUTO">("MANUAL");
+  const { setApiResult, apiResult } = useSearchStore.getState();
 
   const [keywords, setKeywords] = useState<string[]>([]);
 
@@ -48,8 +51,14 @@ const AuditForm: React.FC = () => {
     }
     try {
       const response = await axios.post(`/api/analyze`, data);
-      // reroute user to the audit results page
-      window.location.href = `/results/${response.data.id}`;
+      console.log("Audit submitted successfully", response.data);
+
+      // upload results to zustand store
+      setApiResult(response.data);
+
+      setTimeout(() => {
+        window.location.href = `/results/${response.data.id}`;
+      }, 1000);
     } catch (error) {
       console.error("Error submitting audit", error);
     }
