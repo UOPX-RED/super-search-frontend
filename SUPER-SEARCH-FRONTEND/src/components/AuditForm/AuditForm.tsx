@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Box, Typography, Button } from "@mui/material";
 import TabSwitcherMUI from "../TabSwitcher/tabswitcher";
 import TagInput from "../TagInput/taginput";
@@ -12,7 +12,7 @@ const DUMMY_COURSES = ["CJS/221", "CPSS/332", "HEA/731", "SWRK/350"];
 
 const AuditForm: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"MANUAL" | "AUTO">("MANUAL");
-  const { setApiResult, apiResult } = useSearchStore.getState();
+  const { setApiResult } = useSearchStore.getState();
 
   const [keywords, setKeywords] = useState<string[]>([]);
 
