@@ -1,14 +1,14 @@
-import React, { useState, KeyboardEvent, ChangeEvent } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
   MenuItem,
   FormControl,
-  TextField,
+  // TextField,
   Select,
   SelectChangeEvent,
-  Checkbox,
-  FormControlLabel,
+  // Checkbox,
+  // FormControlLabel,
 } from "@mui/material";
 import Chips from "../ChipTabs/chiptabs";
 
@@ -16,14 +16,14 @@ interface AutoScanViewProps {
   courses: Object;
   selectedCourses: string[];
   onSelectCourse: (course: string) => void;
-  onSelectAll: () => void;
+  // onSelectAll: () => void;
 }
 
 const AutoScanView: React.FC<AutoScanViewProps> = ({
   courses,
   selectedCourses,
   onSelectCourse,
-  onSelectAll,
+  // onSelectAll,
 }) => {
   const handleCourseSelect = (event: SelectChangeEvent) => {
     const value = event.target.value as string;

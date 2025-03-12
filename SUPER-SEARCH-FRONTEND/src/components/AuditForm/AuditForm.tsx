@@ -356,7 +356,8 @@ const AuditForm: React.FC = () => {
   const [metadataKey, setMetadataKey] = useState("");
   const [metadataValue, setMetadataValue] = useState("");
 
-  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  // const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  const selectedCourses: string[] = [];
   const [courseCode, setCourseCode] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -375,25 +376,25 @@ const AuditForm: React.FC = () => {
     setKeywords((prev) => prev.filter((item) => item !== tag));
   };
 
-  const handleSelectCourse = (course: string) => {
-    setSelectedCourses((prev) =>
-      prev.includes(course)
-        ? prev.filter((c) => c !== course)
-        : [...prev, course]
-    );
-  };
+  // const handleSelectCourse = (course: string) => {
+  //   setSelectedCourses((prev) =>
+  //     prev.includes(course)
+  //       ? prev.filter((c) => c !== course)
+  //       : [...prev, course]
+  //   );
+  // };
 
   const handleCourseCode = (course: string) => {
     setCourseCode(course)
   };
 
 
-  const handleSelectAll = () => {
-    setSelectedCourses(
-      []
-      // selectedCourses.length === DUMMY_COURSES.length ? [] : [...DUMMY_COURSES]
-    );
-  };
+  // const handleSelectAll = () => {
+  //   setSelectedCourses(
+  //     []
+  //     // selectedCourses.length === DUMMY_COURSES.length ? [] : [...DUMMY_COURSES]
+  //   );
+  // };
 
   const getCourseInfo = (courseCode: string) => {
     const course = DUMMY_COURSES[courseCode]
@@ -480,7 +481,7 @@ const AuditForm: React.FC = () => {
               selectedCourses={selectedCourses}
               // onSelectCourse={handleSelectCourse}
               onSelectCourse={handleCourseCode}
-              onSelectAll={handleSelectAll}
+              // onSelectAll={handleSelectAll}
             />
           )}
         </Box>

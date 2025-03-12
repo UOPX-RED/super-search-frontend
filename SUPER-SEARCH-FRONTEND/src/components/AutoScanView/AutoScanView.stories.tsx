@@ -21,13 +21,13 @@ const Template: StoryFn<typeof AutoScanView> = (args) => {
     }
   };
 
-  const handleSelectAll = () => {
-    if (selectedCourses.length === args.courses.length) {
-      setSelectedCourses([]);
-    } else {
-      setSelectedCourses([...args.courses]);
-    }
-  };
+  // const handleSelectAll = () => {
+  //   if (selectedCourses.length === args.courses.length) {
+  //     setSelectedCourses([]);
+  //   } else {
+  //     setSelectedCourses([...args.courses]);
+  //   }
+  // };
 
   return (
     <div style={{ width: '600px' }}>
@@ -35,7 +35,7 @@ const Template: StoryFn<typeof AutoScanView> = (args) => {
         {...args}
         selectedCourses={selectedCourses}
         onSelectCourse={handleSelectCourse}
-        onSelectAll={handleSelectAll}
+        // onSelectAll={handleSelectAll}
       />
     </div>
   );
