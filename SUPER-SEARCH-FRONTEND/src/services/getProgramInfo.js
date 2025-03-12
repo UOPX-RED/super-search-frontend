@@ -6,11 +6,11 @@ if (process.env.ENVIRONMENT === "LOCAL") {
 }
 
 let api_url =
-  process.env.COURSES_API ||
-  "https://stage.phoenix.edu/services/courses/v1/templates/curriculum";
+  process.env.PROGRAMS_API ||
+  `https://stage.phoenix.edu/services/programs/v2/templates?$filter=programId eq 'BSB/A' and version eq '025A'`;
 
-const getCourseInfo = async (courseCode) => {
-  const url = `${api_url}?courseCode=${courseCode}`;
+const getProgramInfo = async (programCode, version) => {
+  const url = `${api_url}?$filter=programId eq '${programCode}' and version eq '${version}'`;
   try {
     const response = await axios.get(url);
     return response.data;
@@ -21,7 +21,7 @@ const getCourseInfo = async (courseCode) => {
 };
 
 if (process.env.ENVIRONMENT === "LOCAL") {
-  getCourseInfo("CMGT/556")
+  getProgramInfo("BSB/A", "025A")
     .then((data) => {
       console.log("data", data);
     })
@@ -30,4 +30,4 @@ if (process.env.ENVIRONMENT === "LOCAL") {
     });
 }
 
-export default getCourseInfo;
+export default getProgramInfo;
