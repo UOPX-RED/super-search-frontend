@@ -500,6 +500,11 @@ const AuditForm: React.FC = () => {
             onClick={() => {
               let courseURL = "";
 
+               if (courseCode) {
+                const [prefix, number] = courseCode.split("/");
+                courseURL = `https://www.phoenix.edu/online-courses/${prefix}${number}.html`;
+              } 
+
               const analyzeText = manualText 
                   ? manualText 
                   : courseCode 
