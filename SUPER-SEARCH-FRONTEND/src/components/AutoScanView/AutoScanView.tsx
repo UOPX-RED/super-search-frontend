@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState, KeyboardEvent, ChangeEvent } from "react";
 import {
   Box,
   Typography,
   MenuItem,
   FormControl,
+  TextField,
   Select,
   SelectChangeEvent,
   Checkbox,
@@ -31,6 +32,12 @@ const AutoScanView: React.FC<AutoScanViewProps> = ({
     }
   };
 
+  const [courseCode, setCourseCode] = useState("");
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setCourseCode(e.target.value);
+  };
+
   return (
     <Box mt={2}>
       <Box display="flex" alignItems="center" mb={2}>
@@ -45,9 +52,9 @@ const AutoScanView: React.FC<AutoScanViewProps> = ({
             mr: 52, 
           }}
         >
-          Courses
+          Course Code
         </Typography>
-        <FormControlLabel
+        {/* <FormControlLabel
           control={
             <Checkbox
               size="small"
@@ -56,11 +63,18 @@ const AutoScanView: React.FC<AutoScanViewProps> = ({
             />
           }
           label="Select All"
-        />
+        /> */}
       </Box>
 
       <FormControl sx={{ width: '610px' }}>
-        <Select
+        <TextField
+        placeholder={"CMGT/256"}
+        value={courseCode}
+        onChange={handleChange}
+        size="small"
+        sx={{ width: '610px' }}
+      />
+        {/* <Select
           displayEmpty
           onChange={handleCourseSelect}
           value="" 
@@ -75,7 +89,7 @@ const AutoScanView: React.FC<AutoScanViewProps> = ({
               {course}
             </MenuItem>
           ))}
-        </Select>
+        </Select> */}
       </FormControl>
 
       {selectedCourses.length > 0 && (
