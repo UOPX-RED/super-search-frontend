@@ -54,7 +54,7 @@ function App() {
         setAuth(true);
       }
     } else {
-      setAuth(true);
+      setAuth(false);
     }
 
     localStorage.setItem("lastRoute", path.pathname);
