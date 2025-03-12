@@ -36,6 +36,7 @@ const AutoScanView: React.FC<AutoScanViewProps> = ({
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setCourseCode(e.target.value);
+    onSelectCourse(courseCode);
   };
 
   return (

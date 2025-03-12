@@ -21,10 +21,13 @@ const AuditForm: React.FC = () => {
   const [metadataValue, setMetadataValue] = useState("");
 
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
-  
-  const isFormValid = activeTab === "MANUAL" 
-    ? manualText.trim() !== "" && keywords.length > 0 
-    : selectedCourses.length > 0 && keywords.length > 0;
+  const [courseCode, setCourseCode] = useState("");
+
+  const isFormValid = activeTab === "AUTO"
+    ? courseCode && keywords.length > 0
+    : activeTab === "MANUAL"
+        ? manualText.trim() !== "" && keywords.length > 0
+        : selectedCourses.length > 0 && keywords.length > 0;
 
   const handleAddTag = (tag: string) => {
     setKeywords((prev) => [...prev, tag]);
@@ -41,6 +44,11 @@ const AuditForm: React.FC = () => {
         : [...prev, course]
     );
   };
+
+  const handleCourseCode = (course: string) => {
+      setCourseCode(course)
+  };
+
 
   const handleSelectAll = () => {
     setSelectedCourses(
@@ -123,7 +131,8 @@ const AuditForm: React.FC = () => {
             <AutoScanView
               courses={DUMMY_COURSES}
               selectedCourses={selectedCourses}
-              onSelectCourse={handleSelectCourse}
+              // onSelectCourse={handleSelectCourse}
+              onSelectCourse={handleCourseCode}
               onSelectAll={handleSelectAll}
             />
           )}
