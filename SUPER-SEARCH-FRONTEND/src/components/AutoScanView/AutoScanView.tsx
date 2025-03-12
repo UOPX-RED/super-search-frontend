@@ -13,7 +13,7 @@ import {
 import Chips from "../ChipTabs/chiptabs";
 
 interface AutoScanViewProps {
-  courses: string[];
+  courses: Object;
   selectedCourses: string[];
   onSelectCourse: (course: string) => void;
   onSelectAll: () => void;
@@ -29,15 +29,12 @@ const AutoScanView: React.FC<AutoScanViewProps> = ({
     const value = event.target.value as string;
     if (value) {
       onSelectCourse(value);
+      setCourseCode(value);
     }
   };
 
+  const COURSE_CODES = Object.keys(courses);
   const [courseCode, setCourseCode] = useState("");
-
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setCourseCode(e.target.value);
-    onSelectCourse(courseCode);
-  };
 
   return (
     <Box mt={2}>
@@ -68,29 +65,29 @@ const AutoScanView: React.FC<AutoScanViewProps> = ({
       </Box>
 
       <FormControl sx={{ width: '610px' }}>
-        <TextField
+        {/* <TextField
         placeholder={"CMGT/556"}
         value={courseCode}
         onChange={handleChange}
         size="small"
         sx={{ width: '610px' }}
-      />
-        {/* <Select
+      /> */}
+        <Select
           displayEmpty
           onChange={handleCourseSelect}
-          value="" 
+          value={courseCode}
           size="small"
           sx={{ mb: 1 }}
         >
           <MenuItem value="">
             Select course
           </MenuItem>
-          {courses.map((course) => (
+          {COURSE_CODES.map((course) => (
             <MenuItem key={course} value={course}>
               {course}
             </MenuItem>
           ))}
-        </Select> */}
+        </Select>
       </FormControl>
 
       {selectedCourses.length > 0 && (

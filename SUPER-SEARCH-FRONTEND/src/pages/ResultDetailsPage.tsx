@@ -99,7 +99,8 @@ const ResultDetailsPage: React.FC = () => {
                   mb: 3,
                 }}
               >
-                Request: {apiResult.request_id}
+                {/* @ts-ignore */}
+                Request: {apiResult.metadata.courseCode ? apiResult.metadata.courseCode : apiResult.request_id}
               </Typography>
               {apiResult.keywords_matched.length > 0 && (
                 <ErrorIcon sx={{ color: "#B3261E", mb: 3 }} />
@@ -117,6 +118,36 @@ const ResultDetailsPage: React.FC = () => {
               Highlighted Sections ({apiResult?.highlighted_sections.length})
             </Typography>
           </Box>
+          
+          {/* @ts-ignore */}
+          {apiResult.metadata.courseLink && <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              gap: 1,
+              paddingBottom: 2,
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                fontFamily: "Inter, sans-serif",
+                fontWeight: 600,
+                fontSize: "16px",
+                color: "#3C3C3C",
+                mb: 1,
+              }}
+            >
+              Course URL
+            </Typography>
+            <Box display="flex" gap={1} flexWrap="wrap">
+              {/* @ts-ignore */}
+              <a href={apiResult.metadata.courseLink} target="_blank" rel="noopener noreferrer">
+                {/* @ts-ignore */}
+                {apiResult.metadata.courseLink}
+              </a>
+            </Box>
+          </Box>}
 
           <Box
             sx={{
@@ -197,7 +228,7 @@ const ResultDetailsPage: React.FC = () => {
                   Additional Info
                 </Typography>
                 <Box sx={{ mt: 2 }}>
-                  <Box sx={{ mb: 1 }}>
+                  {apiResult.content_type !== "default" && <Box sx={{ mb: 1 }}>
                     <Typography
                       variant="body2"
                       fontWeight={600}
@@ -206,10 +237,11 @@ const ResultDetailsPage: React.FC = () => {
                       Content type:
                     </Typography>{" "}
                     <Typography variant="body2" display="inline">
-                      {/* {apiResult.metadata.contentType} */}
+                      {apiResult.content_type}
                     </Typography>
-                  </Box>
-                  <Box sx={{ mb: 1 }}>
+                  </Box>}
+                  {/* @ts-ignore */}
+                  {apiResult.metadata.author && <Box sx={{ mb: 1 }}>
                     <Typography
                       variant="body2"
                       fontWeight={600}
@@ -218,9 +250,10 @@ const ResultDetailsPage: React.FC = () => {
                       Author:
                     </Typography>{" "}
                     <Typography variant="body2" display="inline">
-                      {/* {apiResult.metadata.author} */}
+                      {/* @ts-ignore */}
+                      {apiResult.metadata.author}
                     </Typography>
-                  </Box>
+                  </Box>}
                   <Box sx={{ mb: 1 }}>
                     <Typography
                       variant="body2"
@@ -230,10 +263,11 @@ const ResultDetailsPage: React.FC = () => {
                       Created On:
                     </Typography>{" "}
                     <Typography variant="body2" display="inline">
-                      {/* {apiResult.metadata.createdOn} */}
+                      {apiResult.created_at}
                     </Typography>
                   </Box>
-                  <Box sx={{ mb: 1 }}>
+                  {/* @ts-ignore */}
+                  {apiResult.metadata.collegeDepartment && <Box sx={{ mb: 1 }}>
                     <Typography
                       variant="body2"
                       fontWeight={600}
@@ -242,9 +276,10 @@ const ResultDetailsPage: React.FC = () => {
                       Department:
                     </Typography>{" "}
                     <Typography variant="body2" display="inline">
-                      {/* {apiResult.metadata.department} */}
+                      {/* @ts-ignore */}
+                      {apiResult.metadata.collegeDepartment}
                     </Typography>
-                  </Box>
+                  </Box>}
                 </Box>
               </Box>
             </Box>

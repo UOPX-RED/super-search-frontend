@@ -1,26 +1,28 @@
 import axios from "axios";
-import dotenv from "dotenv";
+// import dotenv from "dotenv";
 
-if (process.env.ENVIRONMENT === "LOCAL") {
-  dotenv.config();
-}
+// if (import.meta.env.VITE_ENVIRONMENT === "LOCAL") {
+//   dotenv.config();
+// }
 
 let api_url =
-  process.env.COURSE_API ||
-  "https://stage.phoenix.edu/services/courses/v1/templates/curriculum";
+  import.meta.env.VITE_COURSE_API ||
+  "/courses/v1/templates/curriculum";
 
-const getCourseInfo = async (courseCode) => {
+const getCourseInfo = async (courseCode: string) => {
   const url = `${api_url}?courseCode=${courseCode}`;
   try {
     const response = await axios.get(url);
-    return response.data;
+    const text = response.data.title + " " + response.data.description;
+    console.log("test", text)
+    return text
   } catch (error) {
     console.error("Error fetching course info:", error);
     throw error;
   }
 };
 
-if (process.env.ENVIRONMENT === "LOCAL") {
+if (import.meta.env.VITE_ENVIRONMENT === "LOCAL") {
   getCourseInfo("CMGT/556")
     .then((data) => {
       console.log("data", data);
