@@ -22,6 +22,7 @@ const AuditForm: React.FC = () => {
 
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [courseCode, setCourseCode] = useState("");
+  const [courseText, setCourseText] = useState("");
 
   const isFormValid = activeTab === "AUTO"
     ? courseCode && keywords.length > 0
@@ -46,7 +47,10 @@ const AuditForm: React.FC = () => {
   };
 
   const handleCourseCode = (course: string) => {
-      setCourseCode(course)
+    setCourseCode(course)
+    // fetch course information here and set it?
+    // courseResp = getCourseInfo(courseCode);
+    // setCourseText(courseResp)
   };
 
 
@@ -153,6 +157,7 @@ const AuditForm: React.FC = () => {
               const finalMetadataKey = metadataKey.trim() || "programId";
               const finalMetadataValue = metadataValue.trim() || "FIN-PM-001";
               
+              // check if it's a program/course when setting this
               submitAudit({
                 source_id: "123",
                 content_type: "program",

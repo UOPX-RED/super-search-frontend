@@ -69,7 +69,7 @@ const AutoScanView: React.FC<AutoScanViewProps> = ({
 
       <FormControl sx={{ width: '610px' }}>
         <TextField
-        placeholder={"CMGT/256"}
+        placeholder={"CMGT/556"}
         value={courseCode}
         onChange={handleChange}
         size="small"
