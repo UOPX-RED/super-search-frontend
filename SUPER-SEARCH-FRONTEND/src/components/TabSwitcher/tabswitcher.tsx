@@ -6,7 +6,10 @@ interface TabSwitcherMUIProps {
   onChangeTab: (tab: "MANUAL" | "AUTO") => void;
 }
 
-const TabSwitcherMUI: React.FC<TabSwitcherMUIProps> = ({ activeTab, onChangeTab }) => {
+const TabSwitcherMUI: React.FC<TabSwitcherMUIProps> = ({
+  activeTab,
+  onChangeTab,
+}) => {
   const handleChange = (_: React.SyntheticEvent, newValue: number) => {
     onChangeTab(newValue === 0 ? "MANUAL" : "AUTO");
   };
@@ -18,51 +21,52 @@ const TabSwitcherMUI: React.FC<TabSwitcherMUIProps> = ({ activeTab, onChangeTab 
         onChange={handleChange}
         textColor="inherit"
         sx={{
-          '& .MuiTabs-indicator': {
-            display: 'none'
+          "& .MuiTabs-indicator": {
+            display: "none",
           },
-          position: 'relative',
-          '& .MuiTab-root': {
-            marginRight: '11px',
-            minHeight: 'unset', 
-            padding: '12px 0', 
-            '&:last-child': {
-              marginRight: 0  
-            }
-          }
+          position: "relative",
+          "& .MuiTab-root": {
+            marginRight: "11px",
+            minHeight: "unset",
+            padding: "12px 0",
+            "&:last-child": {
+              marginRight: 0,
+            },
+          },
         }}
       >
         <Tab
           label="Manual Input"
           sx={{
-            boxSizing: 'border-box',
-            width: '300px',
-            height: '32px',
+            boxSizing: "border-box",
+            width: "300px",
+            height: "32px",
             backgroundColor: activeTab === "MANUAL" ? "#000000" : "#FFFFFF",
             color: activeTab === "MANUAL" ? "#FFFFFF" : "#000000",
-            borderRadius: '5px',
-            border: '1px solid #000000',
-            textTransform: 'none',
-            '&:hover': {
+            borderRadius: "5px",
+            border: "1px solid #000000",
+            textTransform: "none",
+            "&:hover": {
               backgroundColor: activeTab === "MANUAL" ? "#000000" : "#FFFFFF",
-            }
+            },
           }}
         />
         <Tab
           label="Auto Scan"
           sx={{
-            boxSizing: 'border-box',
-            width: '300px', 
-            height: '32px', 
+            boxSizing: "border-box",
+            width: "300px",
+            height: "32px",
             backgroundColor: activeTab === "AUTO" ? "#000000" : "#FFFFFF",
             color: activeTab === "AUTO" ? "#FFFFFF" : "#000000",
-            borderRadius: '5px',
-            border: '1px solid #000000',
-            textTransform: 'none',
-            '&:hover': {
+            borderRadius: "5px",
+            border: "1px solid #000000",
+            textTransform: "none",
+            "&:hover": {
               backgroundColor: activeTab === "AUTO" ? "#000000" : "#FFFFFF",
-            }
+            },
           }}
+          disabled={true}
         />
       </Tabs>
     </Box>

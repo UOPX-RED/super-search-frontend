@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box, Typography, Button } from "@mui/material";
+import { Box, Typography, Button, CircularProgress } from "@mui/material";
 import TabSwitcherMUI from "../TabSwitcher/tabswitcher";
 import TagInput from "../TagInput/taginput";
 import ManualInputView from "../ManualInputView/ManualInputView";
@@ -21,6 +21,11 @@ const AuditForm: React.FC = () => {
   const [metadataValue, setMetadataValue] = useState("");
 
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const isFormValid = activeTab === "MANUAL" 
+    ? manualText.trim() !== "" && keywords.length > 0 
+    : selectedCourses.length > 0 && keywords.length > 0;
 
   const handleAddTag = (tag: string) => {
     setKeywords((prev) => [...prev, tag]);
@@ -45,6 +50,9 @@ const AuditForm: React.FC = () => {
   };
 
   const submitAudit = async (data: unknown) => {
+    if (!isFormValid) return;
+    setLoading(true);
+    
     const token = localStorage.getItem("userToken");
     if (token) {
       axios.defaults.headers.common["X-Azure-Token"] = token;
@@ -62,18 +70,24 @@ const AuditForm: React.FC = () => {
       }, 1000);
     } catch (error) {
       console.error("Error submitting audit", error);
+      setLoading(false);
     }
   };
 
   return (
-    // <Box sx={{ width: "100%", maxWidth: "800px", mx: "auto", p: 3 }}>
     <div className="px-8 py-10">
       <Typography variant="h4" gutterBottom>
         Audit Your Learning Materials
       </Typography>
 
+      <Box sx={{ display: "flex", alignItems: "center" }}>
+        <Typography variant="subtitle1" sx={{ mr: 1 }}>
+          Keywords to identify
+          <span style={{ color: "red" }}>*</span>
+        </Typography>
+      </Box>
       <TagInput
-        label="Keywords to identify"
+        label=""
         tags={keywords}
         onAddTag={handleAddTag}
         onRemoveTag={handleRemoveTag}
@@ -91,6 +105,7 @@ const AuditForm: React.FC = () => {
         }}
       >
         Sources to analyze
+        <span style={{ color: "red" }}>*</span>
       </Typography>
 
       <Box mt={2}>
@@ -127,17 +142,30 @@ const AuditForm: React.FC = () => {
         >
           <Button
             variant="contained"
-            onClick={() =>
+            onClick={() => {
+              let metadata = { [metadataKey.trim() || "programId"]: metadataValue.trim() || "FIN-PM-001" };
+              
+              const metadataElement = document.getElementById("allMetadata") as HTMLInputElement;
+              if (metadataElement && metadataElement.value) {
+                try {
+                  const parsedMetadata = JSON.parse(metadataElement.value);
+                  if (Object.keys(parsedMetadata).length > 0) {
+                    metadata = parsedMetadata;
+                  }
+                } catch (e) {
+                  console.error("Error parsing metadata:", e);
+                }
+              }
+              
               submitAudit({
-                source_id: "123",
-                content_type: "program",
+                source_id: activeTab === "MANUAL" ? "text-input" : selectedCourses.join(","),
+                content_type: activeTab === "MANUAL" ? "program" : "course",
                 text: manualText,
                 keywords,
-                metadata: {
-                  [metadataKey]: metadataValue,
-                },
-              })
-            }
+                metadata,
+              });
+            }}
+            disabled={!isFormValid || loading}
             sx={{
               backgroundColor: "#0CBC8B",
               color: "#FFFFFF",
@@ -151,14 +179,17 @@ const AuditForm: React.FC = () => {
               "&:hover": {
                 backgroundColor: "#0aa87a",
               },
+              "&:disabled": {
+                backgroundColor: "#cccccc",
+                color: "#666666",
+              },
             }}
           >
-            Start Audit
+            {loading ? <CircularProgress size={24} color="inherit" /> : "Start Audit"}
           </Button>
         </Box>
       </Box>
     </div>
-    // </Box>
   );
 };
 

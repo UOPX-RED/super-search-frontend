@@ -1,87 +1,68 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react';
 import HighlightedSectionCard from './HighlightedSectionCard';
 
-const meta = {
+const meta: Meta<typeof HighlightedSectionCard> = {
   title: 'Components/HighlightedSectionCard',
   component: HighlightedSectionCard,
   parameters: {
     layout: 'centered',
+    backgrounds: {
+      default: 'light',
+    },
   },
   tags: ['autodocs'],
   argTypes: {
-    matchedWord: { control: 'text' },
+    matchedWord: { control: { type: 'object' } },
     confidence: { control: 'text' },
     matchedText: { control: 'text' },
     reason: { control: 'text' },
   },
-} satisfies Meta<typeof HighlightedSectionCard>;
+};
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<typeof HighlightedSectionCard>;
 
 export const Default: Story = {
   args: {
-    matchedWord: "Diversity",
-    confidence: "89%",
-    matchedText: "Students will examine how social factors influence criminal behavior and the justice system's response.",
-    reason: "This section acknowledges how different social factors affect the criminal justice system, recognizing the diversity of experiences and perspectives.",
+    matchedWord: ['example keyword'],
+    confidence: '85%',
+    matchedText: 'This text contains an example keyword that was detected by the system.',
+    reason: 'The keyword was highlighted because it matches a pattern in our database.',
+  },
+};
+
+export const MultipleKeywords: Story = {
+  args: {
+    matchedWord: ['first term', 'second term', 'third term'],
+    confidence: '92%',
+    matchedText: 'This sample text contains multiple terms that were flagged: first term, second term, and third term are all detected.',
+    reason: 'Multiple terms were detected that match patterns in our database.',
+  },
+};
+
+export const LowConfidence: Story = {
+  args: {
+    matchedWord: ['possible match'],
+    confidence: '45%',
+    matchedText: 'This might contain a possible match but the system is not very confident.',
+    reason: 'Low confidence match that may require manual review.',
   },
 };
 
 export const LongText: Story = {
   args: {
-    matchedWord: "Equity",
-    confidence: "92%",
-    matchedText: "Our university is committed to creating opportunities for all students, regardless of their background. We have implemented several programs to ensure equal access to resources and support services for traditionally underserved populations.",
-    reason: "The text emphasizes providing equal access to resources and support services, focusing on equity for underserved populations, which is a core element of equitable practices in higher education.",
+    matchedWord: ['important concept'],
+    confidence: '78%',
+    matchedText: 'This is a much longer example text that demonstrates how the card handles paragraphs of content. When users submit longer pieces of content, the system still needs to display the matched text in a readable format. This example shows how the important concept appears in context with surrounding text that provides more information about the topic being discussed.',
+    reason: 'The important concept was detected within a longer passage of text.',
   },
 };
 
-export const DEIKeyword: Story = {
+export const NumericConfidence: Story = {
   args: {
-    matchedWord: "DEI",
-    confidence: "95%",
-    matchedText: "Our goal is to build a community where everyone feels welcome and valued, and where diverse perspectives enhance the learning experience for all.",
-    reason: "This statement encompasses the core principles of Diversity, Equity, and Inclusion by addressing the value of diverse perspectives and creating a welcoming environment.",
+    matchedWord: ['technical term'],
+    confidence: 0.67,
+    matchedText: 'The technical term appears in this specialized context.',
+    reason: 'Medium confidence match for a technical or specialized term.',
   },
-};
-
-export const LowerConfidence: Story = {
-  args: {
-    matchedWord: "Inclusion",
-    confidence: "75%",
-    matchedText: "The program encourages participation from students of all backgrounds.",
-    reason: "The text implies inclusivity by encouraging participation from students of all backgrounds, though it doesn't explicitly mention inclusion strategies.",
-  },
-};
-
-export const CustomWidth: Story = {
-  args: {
-    ...Default.args,
-  },
-  decorators: [
-    (Story) => (
-      <div style={{ width: '400px' }}>
-        <Story />
-      </div>
-    ),
-  ],
-};
-
-export const MobileView: Story = {
-  args: {
-    ...Default.args,
-  },
-  parameters: {
-    viewport: {
-      defaultViewport: 'mobile1',
-    },
-  },
-  decorators: [
-    (Story) => (
-      <div style={{ width: '320px' }}>
-        <Story />
-      </div>
-    ),
-  ],
 };
