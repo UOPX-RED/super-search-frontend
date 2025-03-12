@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box, Typography, Button } from "@mui/material";
+import { Box, Typography, Button, CircularProgress } from "@mui/material";
 import TabSwitcherMUI from "../TabSwitcher/tabswitcher";
 import TagInput from "../TagInput/taginput";
 import ManualInputView from "../ManualInputView/ManualInputView";
@@ -359,11 +359,13 @@ const AuditForm: React.FC = () => {
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [courseCode, setCourseCode] = useState("");
 
+  const [loading, setLoading] = useState(false);
+
   const isFormValid = activeTab === "AUTO"
     ? courseCode && keywords.length > 0
     : activeTab === "MANUAL"
         ? manualText.trim() !== "" && keywords.length > 0
-        : selectedCourses.length > 0 && keywords.length > 0;
+      : selectedCourses.length > 0 && keywords.length > 0;
 
   const handleAddTag = (tag: string) => {
     setKeywords((prev) => [...prev, tag]);
@@ -402,6 +404,7 @@ const AuditForm: React.FC = () => {
 
   const submitAudit = async (data: unknown) => {
     if (!isFormValid) return;
+    setLoading(true);
     
     const token = localStorage.getItem("userToken");
     if (token) {
@@ -420,11 +423,11 @@ const AuditForm: React.FC = () => {
       }, 1000);
     } catch (error) {
       console.error("Error submitting audit", error);
+      setLoading(false);
     }
   };
 
   return (
-    // <Box sx={{ width: "100%", maxWidth: "800px", mx: "auto", p: 3 }}>
     <div className="px-8 py-10">
       <Typography variant="h4" gutterBottom>
         Audit Your Learning Materials
@@ -494,8 +497,6 @@ const AuditForm: React.FC = () => {
           <Button
             variant="contained"
             onClick={() => {
-              const finalMetadataKey = metadataKey.trim() || "programId";
-              const finalMetadataValue = metadataValue.trim() || "FIN-PM-001";
               let courseURL = "";
 
               const analyzeText = manualText 
@@ -503,6 +504,25 @@ const AuditForm: React.FC = () => {
                   : courseCode 
                       ? getCourseInfo(courseCode) 
                   : "";
+              let metadata = { [metadataKey.trim() || "programId"]: metadataValue.trim() || "FIN-PM-001" };
+              
+              const metadataElement = document.getElementById("allMetadata") as HTMLInputElement;
+              if (metadataElement && metadataElement.value) {
+                try {
+                  const parsedMetadata = JSON.parse(metadataElement.value);
+                  if (Object.keys(parsedMetadata).length > 0) {
+                    metadata = parsedMetadata;
+                  }
+                } catch (e) {
+                  console.error("Error parsing metadata:", e);
+                }
+              }
+
+              metadata = {
+                ...metadata,
+                ...(courseCode && { courseCode: courseCode }),
+                ...(courseURL && courseCode && { courseLink: courseURL })
+              };
               
               if (courseCode) {
                 const [prefix, number] = courseCode.split("/");
@@ -511,18 +531,14 @@ const AuditForm: React.FC = () => {
               
               // check if it's a program/course when setting this
               submitAudit({
-                source_id: "123",
+                source_id: activeTab === "MANUAL" ? "text-input" : courseCode, // only two choices for now
                 content_type: courseCode ? "course" : "default",
                 text: analyzeText,
                 keywords,
-                metadata: {
-                  [finalMetadataKey]: finalMetadataValue,
-                  ...(courseCode && { courseCode: courseCode }),
-                  ...(courseURL && courseCode && { courseLink: courseURL})
-                },
-              })
+                metadata
+              });
             }}
-            disabled={!isFormValid}
+            disabled={!isFormValid || loading}
             sx={{
               backgroundColor: "#0CBC8B",
               color: "#FFFFFF",
@@ -542,12 +558,11 @@ const AuditForm: React.FC = () => {
               },
             }}
           >
-            Start Audit
+            {loading ? <CircularProgress size={24} color="inherit" /> : "Start Audit"}
           </Button>
         </Box>
       </Box>
     </div>
-    // </Box>
   );
 };
 

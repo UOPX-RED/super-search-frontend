@@ -69,7 +69,7 @@ const ResultDetailsPage: React.FC = () => {
               }}
               onClick={handleBack}
             >
-              back
+              Back
             </Typography>
           </Box>
 
