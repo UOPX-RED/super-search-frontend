@@ -15,7 +15,7 @@ const getProgramInfo = async (programCode, version) => {
     const response = await axios.get(url);
     return response.data;
   } catch (error) {
-    console.error("Error fetching course info:", error);
+    console.error("Error fetching program info:", error);
     throw error;
   }
 };
