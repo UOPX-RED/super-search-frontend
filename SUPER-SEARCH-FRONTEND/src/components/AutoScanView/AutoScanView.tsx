@@ -1,35 +1,40 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
   MenuItem,
   FormControl,
+  // TextField,
   Select,
   SelectChangeEvent,
-  Checkbox,
-  FormControlLabel,
+  // Checkbox,
+  // FormControlLabel,
 } from "@mui/material";
 import Chips from "../ChipTabs/chiptabs";
 
 interface AutoScanViewProps {
-  courses: string[];
+  courses: Object;
   selectedCourses: string[];
   onSelectCourse: (course: string) => void;
-  onSelectAll: () => void;
+  // onSelectAll: () => void;
 }
 
 const AutoScanView: React.FC<AutoScanViewProps> = ({
   courses,
   selectedCourses,
   onSelectCourse,
-  onSelectAll,
+  // onSelectAll,
 }) => {
   const handleCourseSelect = (event: SelectChangeEvent) => {
     const value = event.target.value as string;
     if (value) {
       onSelectCourse(value);
+      setCourseCode(value);
     }
   };
+
+  const COURSE_CODES = Object.keys(courses);
+  const [courseCode, setCourseCode] = useState("");
 
   return (
     <Box mt={2}>
@@ -45,9 +50,9 @@ const AutoScanView: React.FC<AutoScanViewProps> = ({
             mr: 52, 
           }}
         >
-          Courses
+          Course Code
         </Typography>
-        <FormControlLabel
+        {/* <FormControlLabel
           control={
             <Checkbox
               size="small"
@@ -56,21 +61,28 @@ const AutoScanView: React.FC<AutoScanViewProps> = ({
             />
           }
           label="Select All"
-        />
+        /> */}
       </Box>
 
       <FormControl sx={{ width: '610px' }}>
+        {/* <TextField
+        placeholder={"CMGT/556"}
+        value={courseCode}
+        onChange={handleChange}
+        size="small"
+        sx={{ width: '610px' }}
+      /> */}
         <Select
           displayEmpty
           onChange={handleCourseSelect}
-          value="" 
+          value={courseCode}
           size="small"
           sx={{ mb: 1 }}
         >
           <MenuItem value="">
             Select course
           </MenuItem>
-          {courses.map((course) => (
+          {COURSE_CODES.map((course) => (
             <MenuItem key={course} value={course}>
               {course}
             </MenuItem>

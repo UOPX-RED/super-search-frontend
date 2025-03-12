@@ -66,7 +66,6 @@ const TabSwitcherMUI: React.FC<TabSwitcherMUIProps> = ({
               backgroundColor: activeTab === "AUTO" ? "#000000" : "#FFFFFF",
             },
           }}
-          disabled={true}
         />
       </Tabs>
     </Box>
