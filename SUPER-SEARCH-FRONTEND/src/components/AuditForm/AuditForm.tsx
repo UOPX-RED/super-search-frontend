@@ -435,7 +435,7 @@ const AuditForm: React.FC = () => {
       </Typography>
 
       <Box sx={{ display: "flex", alignItems: "center" }}>
-        <Typography variant="subtitle1" sx={{ mr: 1 }}>
+        <Typography variant="subtitle1" sx={{ mr: 1, mt: 3, mb: 2 }}>
           Keywords to identify
           <span style={{ color: "red" }}>*</span>
         </Typography>

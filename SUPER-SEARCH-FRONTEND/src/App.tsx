@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import ResultsPage from "./pages/ResultsPage";
 import ResultDetailsPage from "./pages/ResultDetailsPage";
 import { Button } from "@mui/material";
+import './styles/highlight.css';
 
 function App() {
   const path = window.location;
@@ -58,6 +59,7 @@ function App() {
     }
 
     localStorage.setItem("lastRoute", path.pathname);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path.pathname, queryString]);
 
   const redirectToLogin = async () => {

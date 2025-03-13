@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Paper, Typography, Stack, Chip, Container } from "@mui/material";
 import ErrorIcon from "@mui/icons-material/Error";
 import HighlightedSectionCard from "../components/HighlightedSectionCard/HighlightedSectionCard";
 import useSearchStore from "../stores/useStore";
+import "../styles/highlight.css";
 
 const ResultDetailsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -189,7 +191,7 @@ const ResultDetailsPage: React.FC = () => {
                 </Box>
               </Box>
 
-              <Box sx={{ mt: 5 }}>
+              <Box sx={{ mt: 5 }} id="original-text-container">
                 <Typography
                   variant="subtitle1"
                   sx={{
@@ -298,6 +300,8 @@ const ResultDetailsPage: React.FC = () => {
                     confidence={section.confidence}
                     matchedText={section.matched_text}
                     reason={section.reason}
+                    start_index={section.start_index}
+                    end_index={section.end_index}
                   />
                 ))}
               </Stack>

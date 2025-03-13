@@ -1,4 +1,4 @@
-import React, { useState, KeyboardEvent, ChangeEvent } from "react";
+import React, { useState, KeyboardEvent, ChangeEvent} from "react";
 import { Box, TextField, Typography } from "@mui/material";
 import Chips from "../ChipTabs/chiptabs";
 
@@ -40,6 +40,12 @@ const TagInput: React.FC<TagInputProps> = ({
     setInputValue(e.target.value);
   };
 
+  const handleBlur = () => {
+    if (inputValue.trim() !== "") {
+      addTagsFromInput();
+    }
+  };
+
   return (
     <Box mb={2}>
       {label && (
@@ -62,8 +68,15 @@ const TagInput: React.FC<TagInputProps> = ({
         value={inputValue}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
         size="small"
-        sx={{ width: '610px' }}
+        sx={{ 
+          width: '610px',
+          '& .MuiOutlinedInput-notchedOutline': {
+            borderColor: inputValue ? 'primary.main' : 'inherit',
+          },
+        }}
+        helperText={inputValue ? "Press Enter or click elsewhere to add keyword" : ""}
       />
       {tags.length > 0 && (
         <Box mt={'21px'}>
