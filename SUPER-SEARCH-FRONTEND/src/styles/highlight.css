@@ -1,0 +1,95 @@
+.highlight-active {
+  background-color: #FFEB3B;
+  background: linear-gradient(to bottom, rgba(255, 235, 59, 0.7), rgba(255, 193, 7, 0.7));
+  padding: 2px 4px;
+  margin: 0 -1px;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 2px rgba(255, 235, 59, 0.4);
+  transition: all 0.3s ease;
+  font-weight: 500;
+  color: #000;
+  position: relative;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  animation: highlight-appear 0.5s ease-out, highlight-pulse 1s ease-in-out 0.5s;
+}
+
+@keyframes highlight-appear {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes highlight-pulse {
+  0% {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 2px rgba(255, 235, 59, 0.4);
+  }
+  50% {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 4px rgba(255, 193, 7, 0.6);
+  }
+  100% {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 2px rgba(255, 235, 59, 0.4);
+  }
+}
+
+.clickable-card {
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.clickable-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.clickable-card::after {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  font-size: 11px;
+  color: #555;
+  background: linear-gradient(to bottom, #f8f8f8, #eeeeee);
+  padding: 3px 8px;
+  border-radius: 12px;
+  opacity: 0;
+  transform: translateY(5px);
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  font-weight: 500;
+}
+
+.clickable-card:hover::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.highlight-active::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  margin-left: -8px;
+  width: 16px;
+  height: 16px;
+  background-color: #FFEB3B;
+  border-radius: 50%;
+  transform: scale(0);
+  opacity: 0;
+  animation: highlight-ping 1s ease-out 0.2s;
+}
+
+@keyframes highlight-ping {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  70%, 100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
