@@ -5,7 +5,7 @@ import axios from "axios";
 //   dotenv.config();
 // }
 
-let api_url =
+const api_url =
   import.meta.env.VITE_COURSE_API ||
   "/courses/v1/templates/curriculum";
 
