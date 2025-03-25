@@ -5,7 +5,6 @@ import TagInput from "../TagInput/taginput";
 import ManualInputView from "../ManualInputView/ManualInputView";
 import AutoScanView from "../AutoScanView/AutoScanView";
 import axios from "axios";
-import ProgramSearch from "../ProgramSearch/ProgramSearch";
 import { useCourseInfo } from "../../hooks/useCourseInfo";
 
 import useSearchStore from "../../stores/useStore";
@@ -24,24 +23,24 @@ const AuditForm: React.FC = () => {
   const { getCourseDetails } = useCourseInfo();
 
   const [keywords, setKeywords] = useState<string[]>([]);
-
   const [manualText, setManualText] = useState("");
   const [metadataKey, setMetadataKey] = useState("");
   const [metadataValue, setMetadataValue] = useState("");
 
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
-  const [courseContents, setCourseContents] = useState<{[key: string]: string}>({});
+  const [courseContents, setCourseContents] = useState<{ [key: string]: string }>({});
   const [courseCode] = useState("");
 
-  const [selectedProgramCode, setSelectedProgramCode] = useState<string | null>(null);
   const [selectedProgramData, setSelectedProgramData] = useState<Program | null>(null);
 
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("");
 
-  const isFormValid = activeTab === "AUTO"
-    ? (selectedCourses.length > 0 || courseCode) && keywords.length > 0
-    : activeTab === "MANUAL"
-        ? manualText.trim() !== "" && keywords.length > 0
+  const isFormValid =
+    activeTab === "AUTO"
+      ? (selectedCourses.length > 0 || courseCode) && keywords.length > 0
+      : activeTab === "MANUAL"
+      ? manualText.trim() !== "" && keywords.length > 0
       : selectedCourses.length > 0 && keywords.length > 0;
 
   const handleAddTag = (tag: string) => {
@@ -52,51 +51,160 @@ const AuditForm: React.FC = () => {
     setKeywords((prev) => prev.filter((item) => item !== tag));
   };
 
-  const handleCourseSelection = (courseCode: string) => {
-    setSelectedCourses(prevSelected => {
-      if (prevSelected.includes(courseCode)) {
-        return prevSelected.filter(code => code !== courseCode);
-      } else {
-        return [...prevSelected, courseCode];
-      }
-    });
+  const handleCourseSelection = (code: string) => {
+    setSelectedCourses((prevSelected) =>
+      prevSelected.includes(code)
+        ? prevSelected.filter((existing) => existing !== code)
+        : [...prevSelected, code]
+    );
   };
 
-  const handleCourseContentFetched = (content: string, courseCode: string) => {
-    setCourseContents(prev => ({
-      ...prev,
-      [courseCode]: content
-    }));
-    
-    console.log(`Stored content for ${courseCode}, total courses with content: ${Object.keys({...courseContents, [courseCode]: content}).length}`);
+  const handleCourseContentFetched = (content: string, code: string) => {
+    setCourseContents((prev) => ({ ...prev, [code]: content }));
   };
 
   const handleProgramSelect = (programData: Program | null) => {
-    setSelectedProgramCode(programData?.code || null);
     setSelectedProgramData(programData);
   };
 
-  const submitAudit = async (data: unknown) => {
-    if (!isFormValid) return;
-    setLoading(true);
-    
-    const token = localStorage.getItem("userToken");
-    if (token) {
-      axios.defaults.headers.common["X-Azure-Token"] = token;
-    }
+  const submitAudit = async (data: any) => {
     try {
-      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+      const token = localStorage.getItem("userToken");
+      if (token) {
+        axios.defaults.headers.common["X-Azure-Token"] = token;
+      }
       const response = await axios.post("http://localhost:8000/analyze", data);
-      console.log("Audit submitted successfully", response.data);
-
-      setApiResult(response.data);
-
-      setTimeout(() => {
-        window.location.href = `/results/${response.data.id}`;
-      }, 1000);
+      return response.data;
     } catch (error) {
       console.error("Error submitting audit", error);
+      throw error;
+    }
+  };
+
+  const fetchCourseText = async (cCode: string) => {
+    if (courseContents[cCode]) {
+      return courseContents[cCode];
+    }
+    try {
+      return await getCourseDetails(cCode);
+    } catch (error) {
+      console.error(`Error fetching course ${cCode}:`, error);
+      return `Error: Could not load details for course ${cCode}.`;
+    }
+  };
+
+  const prepareMetadata = (cCode?: string) => {
+    let metadata: Record<string, any> = {
+      [metadataKey.trim() || "programId"]: metadataValue.trim() || "FIN-PM-001",
+    };
+
+    const metadataElement = document.getElementById("allMetadata") as HTMLInputElement;
+    if (metadataElement && metadataElement.value) {
+      try {
+        const parsed = JSON.parse(metadataElement.value);
+        if (Object.keys(parsed).length > 0) {
+          metadata = parsed;
+        }
+      } catch (e) {
+        console.error("Error parsing metadata:", e);
+      }
+    }
+
+    if (cCode) {
+      const [prefix, number] = cCode.split("/");
+      const courseURL =
+        prefix && number
+          ? `https://www.phoenix.edu/online-courses/${prefix}${number}.html`
+          : "";
+      metadata = {
+        ...metadata,
+        courseCode: cCode,
+        ...(courseURL && { courseLink: courseURL }),
+      };
+    }
+
+    if (selectedProgramData) {
+      metadata = {
+        ...metadata,
+        programCode: selectedProgramData.code,
+        programTitle: selectedProgramData.title,
+        programLevel: selectedProgramData.levelName,
+        programCollege: selectedProgramData.collegeName,
+      };
+    }
+
+    return metadata;
+  };
+
+  const handleStartAudit = async () => {
+    if (!isFormValid) return;
+
+    setLoading(true);
+    setLoadingMessage("");
+    try {
+      const allResults: any[] = [];
+
+      // MANUAL
+      if (activeTab === "MANUAL") {
+        const analyzeText = manualText;
+        const sourceId = "text-input";
+        const metadata = prepareMetadata();
+        const data = {
+          source_id: sourceId,
+          content_type: "default",
+          text: analyzeText,
+          keywords,
+          metadata,
+        };
+        setLoadingMessage("Analyzing manual text...");
+        const result = await submitAudit(data);
+        allResults.push(result);
+
+      // Single course code typed in
+      } else if (courseCode && selectedCourses.length === 0) {
+        setLoadingMessage(`Fetching and analyzing course: ${courseCode}...`);
+        const analyzeText = await fetchCourseText(courseCode);
+        const metadata = prepareMetadata(courseCode);
+        const data = {
+          source_id: courseCode,
+          content_type: "course",
+          text: analyzeText,
+          keywords,
+          metadata,
+        };
+        const result = await submitAudit(data);
+        allResults.push(result);
+
+      // Multiple or selected courses
+      } else if (selectedCourses.length > 0) {
+        for (let i = 0; i < selectedCourses.length; i++) {
+          const cCode = selectedCourses[i];
+          setLoadingMessage(
+            `Analyzing course ${cCode} (${i + 1}/${selectedCourses.length})...`
+          );
+
+          const analyzeText = await fetchCourseText(cCode);
+          const metadata = prepareMetadata(cCode);
+          const data = {
+            source_id: cCode,
+            content_type: "course",
+            text: analyzeText,
+            keywords,
+            metadata,
+          };
+          const result = await submitAudit(data);
+          allResults.push(result);
+        }
+      }
+
+      setApiResult(allResults);
+
+      window.location.href = "/results";
+    } catch (error) {
+      console.error("Error in handleStartAudit:", error);
+    } finally {
       setLoading(false);
+      setLoadingMessage("");
     }
   };
 
@@ -112,12 +220,7 @@ const AuditForm: React.FC = () => {
           <span style={{ color: "red" }}>*</span>
         </Typography>
       </Box>
-      <TagInput
-        label=""
-        tags={keywords}
-        onAddTag={handleAddTag}
-        onRemoveTag={handleRemoveTag}
-      />
+      <TagInput label="" tags={keywords} onAddTag={handleAddTag} onRemoveTag={handleRemoveTag} />
 
       <Typography
         variant="subtitle2"
@@ -160,6 +263,7 @@ const AuditForm: React.FC = () => {
 
         <Box
           display="flex"
+          flexDirection="column"
           justifyContent="left"
           sx={{
             width: "100%",
@@ -169,106 +273,7 @@ const AuditForm: React.FC = () => {
         >
           <Button
             variant="contained"
-            onClick={async () => {
-              let courseURL = "";
-              let analyzeText = "";
-              let sourceId = "";
-
-              if (activeTab === "MANUAL") {
-                analyzeText = manualText;
-                sourceId = "text-input";
-              } else if (courseCode) {
-                try {
-                  analyzeText = await getCourseDetails(courseCode);
-                  sourceId = courseCode;
-                  const [prefix, number] = courseCode.split("/");
-                  courseURL = `https://www.phoenix.edu/online-courses/${prefix}${number}.html`;
-                } catch (error) {
-                  console.error(`Error fetching course ${courseCode}:`, error);
-                  return;
-                }
-              } else if (selectedCourses.length > 0) {
-                try {
-                  const coursesContent = await Promise.all(
-                    selectedCourses.map(async (code) => {
-                      if (courseContents[code]) {
-                        return courseContents[code];
-                      }
-
-                      try {
-                        return await getCourseDetails(code);
-                      } catch (error) {
-                        console.error(`Error fetching course ${code}:`, error);
-                        return `Course: ${code} (details could not be loaded)`;
-                      }
-                    })
-                  );
-                  
-                  analyzeText = coursesContent.join("\n\n");
-                  sourceId = selectedCourses.join(",");
-                  
-                  if (selectedCourses[0]) {
-                    const [prefix, number] = selectedCourses[0].split("/");
-                    courseURL = `https://www.phoenix.edu/online-courses/${prefix}${number}.html`;
-                  }
-                } catch (error) {
-                  console.error("Error preparing course content:", error);
-                  return; 
-                }
-              }
-
-              interface MetadataObject {
-                [key: string]: string | string[];
-              }
-
-              let metadata: MetadataObject = { 
-                [metadataKey.trim() || "programId"]: metadataValue.trim() || "FIN-PM-001" 
-              };
-              
-              const metadataElement = document.getElementById("allMetadata") as HTMLInputElement;
-              if (metadataElement && metadataElement.value) {
-                try {
-                  const parsedMetadata = JSON.parse(metadataElement.value);
-                  if (Object.keys(parsedMetadata).length > 0) {
-                    metadata = parsedMetadata;
-                  }
-                } catch (e) {
-                  console.error("Error parsing metadata:", e);
-                }
-              }
-
-              if (courseCode) {
-                metadata = {
-                  ...metadata,
-                  courseCode: courseCode,
-                  ...(courseURL && { courseLink: courseURL })
-                };
-              } else if (selectedCourses.length > 0) {
-                metadata = {
-                  ...metadata,
-                  courseCodes: selectedCourses, 
-                  ...(courseURL && { courseLink: courseURL })
-                };
-              }
-
-              if (selectedProgramData) {
-                metadata = {
-                  ...metadata,
-                  programCode: selectedProgramData.code,
-                  programTitle: selectedProgramData.title,
-                  programLevel: selectedProgramData.levelName,
-                  programCollege: selectedProgramData.collegeName
-                };
-              }
-              
-              submitAudit({
-                source_id: sourceId,
-                content_type: activeTab === "AUTO" ? "course" : "default",
-                text: analyzeText,
-                keywords,
-                metadata
-              });
-            }}
+            onClick={handleStartAudit}
             disabled={!isFormValid || loading}
             sx={{
               backgroundColor: "#0CBC8B",
@@ -291,6 +296,11 @@ const AuditForm: React.FC = () => {
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : "Start Audit"}
           </Button>
+          {loadingMessage && (
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              {loadingMessage}
+            </Typography>
+          )}
         </Box>
       </Box>
     </div>
