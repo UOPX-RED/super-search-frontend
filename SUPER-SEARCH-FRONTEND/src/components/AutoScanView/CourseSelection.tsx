@@ -22,6 +22,7 @@ interface Course {
   code: string;
   title: string;
   collegeName: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
@@ -117,7 +118,7 @@ const CourseSelection: React.FC<CourseSelectionProps> = ({
   };
   
   const handleManualCourseSubmit = (
-    event: React.KeyboardEvent<HTMLInputElement> | null = null
+    event: React.KeyboardEvent<HTMLDivElement | HTMLInputElement> | null = null
   ) => {
     if (event && event.key !== "Enter") return;
     

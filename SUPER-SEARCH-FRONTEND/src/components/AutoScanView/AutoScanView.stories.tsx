@@ -21,21 +21,16 @@ const Template: StoryFn<typeof AutoScanView> = (args) => {
     }
   };
 
-  // const handleSelectAll = () => {
-  //   if (selectedCourses.length === args.courses.length) {
-  //     setSelectedCourses([]);
-  //   } else {
-  //     setSelectedCourses([...args.courses]);
-  //   }
-  // };
+  const handleCourseContentFetched = (content: string, courseCode: string) => {
+    console.log(`Fetched content for ${courseCode}:`, content);
+  };
 
   return (
     <div style={{ width: '600px' }}>
       <AutoScanView
-        {...args}
         selectedCourses={selectedCourses}
         onSelectCourse={handleSelectCourse}
-        // onSelectAll={handleSelectAll}
+        onCourseContentFetched={handleCourseContentFetched}
       />
     </div>
   );
@@ -43,22 +38,10 @@ const Template: StoryFn<typeof AutoScanView> = (args) => {
 
 export const Default = Template.bind({});
 Default.args = {
-  courses: [
-    'CJS/221',
-    'CPSS/332',
-    'HWA/731',
-    'SWRK/350',
-  ],
   selectedCourses: [],
 };
 
 export const WithSelectedCourses = Template.bind({});
 WithSelectedCourses.args = {
-  courses: [
-    'CJS/221',
-    'CPSS/332',
-    'HWA/731',
-    'SWRK/350',
-  ],
   selectedCourses: ['CJS/221', 'CPSS/332'],
 };
