@@ -1,20 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../components/ui/table";
-
-import { Input } from "../components/ui/input";
-import { Button } from "../components/ui/button";
-import { ArrowUpDown, ArrowUp, ArrowDown, Plus } from "lucide-react";
-
 import useSearchStore from "../stores/useSearchStore";
 import { useAllCourses } from '../hooks/useAllCourses';
+import ResultsFilter from '../components/Results/ResultsFilter';
+import ResultsTable from '../components/Results/ResultsTable';
+import { escapeCSV, getCourseName, getProgramName } from '../utils/resultFormatters';
 
 interface AnalysisResult {
   id: string;
@@ -32,18 +23,14 @@ interface AnalysisResult {
 type SortField = 'courseName' | 'collegeName' | 'matchedKeywords';
 type SortDirection = 'asc' | 'desc';
 
-
 export default function ResultsPage() {
   const navigate = useNavigate();
-  const { apiResult } = useSearchStore((state) => state);
+  const apiResult = useSearchStore((state: any) => state.apiResult);
   const { courses } = useAllCourses(); 
 
   const [resultsData, setResultsData] = useState<AnalysisResult[]>([]);
-
   const [filterText, setFilterText] = useState("");
-
   const [showMatchedOnly, setShowMatchedOnly] = useState(false);
-
   const [sortField, setSortField] = useState<SortField>('courseName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
@@ -61,7 +48,6 @@ export default function ResultsPage() {
       setSortDirection('asc');
     }
   };
-
 
   const filteredResults = resultsData.filter((res) => {
     const textLower = filterText.toLowerCase();
@@ -83,14 +69,17 @@ export default function ResultsPage() {
     return passesMainFilter && passMatchedOnly;
   });
 
-
   const finalResults = [...filteredResults].sort((a, b) => {
     const direction = sortDirection === 'asc' ? 1 : -1;
 
     switch (sortField) {
       case 'courseName': {
-        const aName = getCourseName(a.original_text);
-        const bName = getCourseName(b.original_text);
+        const aName = a.content_type === 'program' 
+          ? getProgramName(a.original_text) 
+          : getCourseName(a.original_text);
+        const bName = b.content_type === 'program' 
+          ? getProgramName(b.original_text) 
+          : getCourseName(b.original_text);
         return aName.localeCompare(bName) * direction;
       }
 
@@ -111,240 +100,86 @@ export default function ResultsPage() {
     }
   });
 
-
   const handleMoreDetails = (resultId: string) => {
     navigate(`/results/${resultId}`);
   };
 
   const handleExportCSV = () => {
     if (finalResults.length === 0) return;
-
-    const header = ["Course_Code", "College_Name", "Keywords_Matched", "Original_Text", "Course_Link"];
-
+  
+    const hasProgramResults = finalResults.some(res => res.content_type === "program");
+    
+    let header;
+    if (hasProgramResults) {
+      header = ["Program_ID", "Version", "Program_Name", "College_Name", "Keywords_Matched", "Program_Link"];
+    } else {
+      header = ["Course_Code", "Course_Name", "College_Name", "Keywords_Matched", "Course_Link"];
+    }
+  
     const rows = finalResults.map((res) => {
-      const cCode = res.source_id;
+      const isProgram = res.content_type === "program";
       
-      const courseData = courses.find(course => course.code === cCode);
-      const cName = courseData?.collegeName || res.metadata?.programCollege || "N/A";
-      
-      const mk = (res.keywords_matched || []).join(",");
-      const orig = (res.original_text || "").replace(/\n/g, " ");
-      const cLink = res.metadata?.courseLink || "N/A";
-      return [cCode, cName, mk, orig, cLink];
+      if (isProgram) {
+        const programIdParts = res.source_id.split('-v');
+        const programId = programIdParts[0];
+        const programVersion = programIdParts.length > 1 ? programIdParts[1] : 'N/A';
+        
+        const programName = res.metadata?.programTitle || getProgramName(res.original_text);
+        const collegeName = res.metadata?.programCollege || "N/A";
+        const matchedKeywords = (res.keywords_matched || []).join(",");
+        const programLink = res.metadata?.programURL || 
+          `https://www.phoenix.edu/programs/${programId.toLowerCase().replace('/', '-')}.html`;
+        
+        return [programId, programVersion, programName, collegeName, matchedKeywords, programLink];
+      } else {
+        const courseCode = res.source_id;
+        const courseName = getCourseName(res.original_text);
+        const courseData = courses.find(course => course.code === courseCode);
+        const collegeName = courseData?.collegeName || res.metadata?.programCollege || "N/A";
+        const matchedKeywords = (res.keywords_matched || []).join(",");
+        const courseLink = res.metadata?.courseLink || 
+          `https://phoenix.edu/courses/${courseCode.replace('/', '-')}`;
+        
+        return [courseCode, courseName, collegeName, matchedKeywords, courseLink];
+      }
     });
-
+  
     const csvLines = [
       header.join(","),
       ...rows.map((r) => r.map(escapeCSV).join(",")),
     ].join("\n");
-
+  
     const blob = new Blob([csvLines], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "results.csv";
+    link.download = finalResults.some(res => res.content_type === "program") ? "program_results.csv" : "course_results.csv";
     link.click();
     URL.revokeObjectURL(url);
   };
 
-  const renderSortIcon = (field: SortField) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="ml-2 h-4 w-4" />;
-    }
-    return sortDirection === 'asc'
-      ? <ArrowUp className="ml-2 h-4 w-4" />
-      : <ArrowDown className="ml-2 h-4 w-4" />;
-  };
-
   return (
     <div className="p-6 overflow-x-auto whitespace-normal">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div className="flex flex-col">
-          <Input
-            placeholder="Filter results..."
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-            className="w-247 mb-5"
-          />
-
-          <div className="flex items-center space-x-3">
-            <div 
-              onClick={() => setShowMatchedOnly(!showMatchedOnly)}
-              className="relative inline-block w-10 h-5 rounded-full cursor-pointer"
-            >
-              <div 
-                className={`absolute inset-0 rounded-full transition-colors duration-200 ${
-                  showMatchedOnly ? 'bg-green-500' : 'bg-gray-300'
-                }`}
-              ></div>
-              <div 
-                className={`absolute top-0.5 left-0.5 bg-white w-4 h-4 rounded-full shadow transform transition-transform duration-200 ${
-                  showMatchedOnly ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              ></div>
-            </div>
-            
-            <label 
-              onClick={() => setShowMatchedOnly(!showMatchedOnly)}
-              className="text-sm font-medium cursor-pointer"
-            >
-              Show only matched results
-            </label>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-
-           <Button 
-            onClick={handleExportCSV}
-            className="app-button bg-primary hover:bg-primary/90 h-9"
-            style={{ backgroundColor: "rgb(0, 179, 115)" }}
-          >
-            Export CSV
-          </Button>
-          <Button 
-            onClick={() => navigate('/')}
-            className="app-button flex items-center gap-1"
-            style={{ backgroundColor: "rgb(0, 0, 0)" }}
-          >
-            <Plus className="h-4 w-4" />
-            New Audit
-          </Button>
-
-         
-        </div>
-      </div>
+      <ResultsFilter 
+        filterText={filterText}
+        setFilterText={setFilterText}
+        showMatchedOnly={showMatchedOnly}
+        setShowMatchedOnly={setShowMatchedOnly}
+        handleExportCSV={handleExportCSV}
+      />
 
       <div className="mb-4 text-sm text-muted-foreground">
         Showing {finalResults.length} of {resultsData.length} results
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[120px]">
-              <div className="flex items-center">
-                Course Code
-              </div>
-            </TableHead>
-
-            <TableHead 
-              className="w-[450px] cursor-pointer"
-              onClick={() => handleSort('courseName')}
-            >
-              <div className="flex items-center">
-                Course Name
-                {renderSortIcon('courseName')}
-              </div>
-            </TableHead>
-
-            <TableHead 
-              className="w-[350px] cursor-pointer"
-              onClick={() => handleSort('collegeName')}
-            >
-              <div className="flex items-center">
-                College Name
-                {renderSortIcon('collegeName')}
-              </div>
-            </TableHead>
-
-            <TableHead 
-              className="w-[200px] cursor-pointer"
-              onClick={() => handleSort('matchedKeywords')}
-            >
-              <div className="flex items-center">
-                Matching Keywords
-                {renderSortIcon('matchedKeywords')}
-              </div>
-            </TableHead>
-
-            <TableHead className="w-[120px]">Course Link</TableHead>
-            <TableHead className="w-[100px]">Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {finalResults.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                No results found. Try adjusting your filters.
-              </TableCell>
-            </TableRow>
-          ) : (
-            finalResults.map((res) => {
-              const courseCode = res.source_id;
-              const courseName = getCourseName(res.original_text);
-              
-              const courseData = courses.find(course => course.code === courseCode);
-              const collegeName = courseData?.collegeName || res.metadata?.programCollege || "N/A";
-              
-              const matchedKeywords = (res.keywords_matched || []).join(", ");
-              const courseLink = res.metadata?.courseLink || "";
-
-              return (
-                <TableRow key={res.id}>
-                  <TableCell className="font-medium truncate max-w-[120px]">
-                    {courseCode}
-                  </TableCell>
-                  <TableCell className="break-words max-w-[450px]">
-                    <div className="line-clamp-3 hover:line-clamp-none">
-                      {courseName}
-                    </div>
-                  </TableCell>
-                  <TableCell className="truncate max-w-[150px]">
-                    {collegeName}
-                  </TableCell>
-                  <TableCell className="break-words max-w-[200px]">
-                    <div className="line-clamp-2 hover:line-clamp-none">
-                      {matchedKeywords}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {courseLink ? (
-                      <a
-                        href={courseLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline text-blue-600"
-                      >
-                        Link
-                      </a>
-                    ) : (
-                      "N/A"
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      onClick={() => handleMoreDetails(res.id)}
-                      className="app-button"
-                      style={{ backgroundColor: "rgb(0, 179, 115)" }}
-                    >
-                      Details
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
+      <ResultsTable 
+        finalResults={finalResults}
+        sortField={sortField}
+        sortDirection={sortDirection}
+        handleSort={handleSort}
+        handleMoreDetails={handleMoreDetails}
+        courses={courses}
+      />
     </div>
   );
-}
-
-function escapeCSV(str: string) {
-  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
-
-function getCourseName(originalText: string) {
-  if (!originalText) return "Unknown Course";
-
-  const splitted = originalText.split("This course");
-  if (splitted.length > 1) {
-    const courseName = splitted[0].trim();
-    return courseName.length > 100 ? courseName.slice(0, 100) + "..." : courseName;
-  }
-  return originalText.slice(0, 40) + "...";
 }

@@ -101,7 +101,7 @@ const ProgramSearch: React.FC<ProgramSearchProps> = ({
     setManualProgramError(null);
   };
   
-  const handleManualProgramSubmit = (event: React.KeyboardEvent<HTMLInputElement> | null = null) => {
+  const handleManualProgramSubmit = (event: React.KeyboardEvent<HTMLDivElement> | null = null) => {
     if (event && event.key !== "Enter") return;
     
     const programCode = manualProgramCode.trim();

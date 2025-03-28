@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { 
   Box, 
@@ -25,6 +26,9 @@ interface AutoScanViewProps {
   onCourseContentFetched: (content: string, courseCode: string) => void;
   selectedProgram?: string | null;
   onProgramSelect?: (program: Program | null) => void;
+  selectedPrograms?: string[];
+  onProgramSelection?: (programId: string) => void;
+  onProgramContentFetched?: (content: any, programId: string) => void;
 }
 
 const AutoScanView: React.FC<AutoScanViewProps> = ({
@@ -33,6 +37,9 @@ const AutoScanView: React.FC<AutoScanViewProps> = ({
   onCourseContentFetched,
   selectedProgram,
   onProgramSelect = () => {},
+  selectedPrograms = [],
+  onProgramSelection = () => {},
+  onProgramContentFetched = () => {},
 }) => {
   const [sourceType, setSourceType] = useState<"course" | "program">("course");
   
@@ -99,6 +106,9 @@ const AutoScanView: React.FC<AutoScanViewProps> = ({
           programs={programs}
           programsLoading={programsLoading}
           programsError={programsError}
+          selectedPrograms={selectedPrograms}
+          onProgramSelection={onProgramSelection}
+          onProgramContentFetched={onProgramContentFetched}
         />
       )}
     </Box>

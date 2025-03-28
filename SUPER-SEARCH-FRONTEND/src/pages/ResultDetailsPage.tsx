@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Box, Paper, Typography, Stack, Chip, Container } from "@mui/material";
@@ -277,6 +278,61 @@ const ResultDetailsPage: React.FC = () => {
                         {result.metadata.collegeDepartment}
                       </Typography>
                     </Box>
+                  )}
+
+                  {result.content_type === "program" && (
+                    <>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" fontWeight={600} display="inline">
+                          Program ID:
+                        </Typography>{" "}
+                        <Typography variant="body2" display="inline">
+                          {result.metadata?.programId || 'N/A'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" fontWeight={600} display="inline">
+                          Version:
+                        </Typography>{" "}
+                        <Typography variant="body2" display="inline">
+                          {result.metadata?.programVersion || 'N/A'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" fontWeight={600} display="inline">
+                          Program Title:
+                        </Typography>{" "}
+                        <Typography variant="body2" display="inline">
+                          {result.metadata?.programTitle || 'N/A'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" fontWeight={600} display="inline">
+                          College:
+                        </Typography>{" "}
+                        <Typography variant="body2" display="inline">
+                          {result.metadata?.programCollege || 'N/A'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" fontWeight={600} display="inline">
+                          Department:
+                        </Typography>{" "}
+                        <Typography variant="body2" display="inline">
+                          {result.metadata?.programDepartment || 'N/A'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" fontWeight={600} display="inline">
+                          Level:
+                        </Typography>{" "}
+                        <Typography variant="body2" display="inline">
+                          {result.metadata?.programLevel || 'N/A'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ mb: 1 }}>
+                      </Box>
+                    </>
                   )}
                 </Box>
               </Box>

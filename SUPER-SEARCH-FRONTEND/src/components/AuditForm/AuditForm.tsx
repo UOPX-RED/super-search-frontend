@@ -1,12 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
-import { Box, Typography, Button, CircularProgress } from "@mui/material";
+import { Box, Typography, Button, CircularProgress, IconButton, Tooltip } from "@mui/material";
 import TabSwitcherMUI from "../TabSwitcher/tabswitcher";
 import TagInput from "../TagInput/taginput";
 import ManualInputView from "../ManualInputView/ManualInputView";
 import AutoScanView from "../AutoScanView/AutoScanView";
 import axios from "axios";
 import { useCourseInfo } from "../../hooks/useCourseInfo";
-
+import { useProgramDetails, ProgramDetailResponse } from "../../hooks/useProgramDetails";
+import HistoryIcon from '@mui/icons-material/History';
+import { useNavigate } from "react-router-dom";
 import useSearchStore from "../../stores/useStore";
 
 interface Program {
@@ -18,9 +21,11 @@ interface Program {
 }
 
 const AuditForm: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"MANUAL" | "AUTO">("MANUAL");
   const { setApiResult } = useSearchStore.getState();
   const { getCourseDetails } = useCourseInfo();
+  const { getProgramDetails } = useProgramDetails();
 
   const [keywords, setKeywords] = useState<string[]>([]);
   const [manualText, setManualText] = useState("");
@@ -32,16 +37,18 @@ const AuditForm: React.FC = () => {
   const [courseCode] = useState("");
 
   const [selectedProgramData, setSelectedProgramData] = useState<Program | null>(null);
+  const [programContents, setProgramContents] = useState<{ [key: string]: ProgramDetailResponse }>({});
+  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
 
   const isFormValid =
     activeTab === "AUTO"
-      ? (selectedCourses.length > 0 || courseCode) && keywords.length > 0
+      ? (selectedCourses.length > 0 || courseCode || selectedPrograms.length > 0) && keywords.length > 0
       : activeTab === "MANUAL"
       ? manualText.trim() !== "" && keywords.length > 0
-      : selectedCourses.length > 0 && keywords.length > 0;
+      : (selectedCourses.length > 0 || selectedPrograms.length > 0) && keywords.length > 0;
 
   const handleAddTag = (tag: string) => {
     setKeywords((prev) => [...prev, tag]);
@@ -67,13 +74,27 @@ const AuditForm: React.FC = () => {
     setSelectedProgramData(programData);
   };
 
+  const handleProgramSelection = (programId: string) => {
+    setSelectedPrograms((prevSelected) =>
+      prevSelected.includes(programId)
+        ? prevSelected.filter((existing) => existing !== programId)
+        : [...prevSelected, programId]
+    );
+  };
+
+  const handleProgramContentFetched = (content: ProgramDetailResponse, programId: string) => {
+    setProgramContents((prev) => ({ ...prev, [programId]: content }));
+  };
+
   const submitAudit = async (data: any) => {
     try {
       const token = localStorage.getItem("userToken");
       if (token) {
         axios.defaults.headers.common["X-Azure-Token"] = token;
       }
-      const response = await axios.post("http://localhost:8000/analyze", data);
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+      const response = await axios.post(`${BACKEND_URL}/api/analyze`, data);
+      // const response = await axios.post("http://localhost:8000/analyze", data);
       return response.data;
     } catch (error) {
       console.error("Error submitting audit", error);
@@ -93,7 +114,11 @@ const AuditForm: React.FC = () => {
     }
   };
 
-  const prepareMetadata = (cCode?: string) => {
+  const createProgramTextContent = (programDetail: ProgramDetailResponse): string => {
+    return `${programDetail.displayName}\n\n${programDetail.textDescription}\n\n${programDetail.formattedDescription}`;
+  };
+
+  const prepareMetadata = (cCode?: string, programId?: string) => {
     let metadata: Record<string, any> = {
       [metadataKey.trim() || "programId"]: metadataValue.trim() || "FIN-PM-001",
     };
@@ -123,7 +148,22 @@ const AuditForm: React.FC = () => {
       };
     }
 
-    if (selectedProgramData) {
+    if (programId && programContents[programId]) {
+      const programDetail = programContents[programId];
+      const programURL = `https://www.phoenix.edu/programs/${programId.toLowerCase().replace('/', '-')}.html`;
+      
+      metadata = {
+        ...metadata,
+        programId: programId,
+        programTitle: programDetail.displayName,
+        programDescription: programDetail.textDescription,
+        programLevel: programDetail.programLevelDescription,
+        programCollege: programDetail.collegeName,
+        programDepartment: programDetail.collegeDepartment,
+        programExpirationDate: programDetail.versionExpirationDate,
+        programURL: programURL
+      };
+    } else if (selectedProgramData) {
       metadata = {
         ...metadata,
         programCode: selectedProgramData.code,
@@ -161,7 +201,7 @@ const AuditForm: React.FC = () => {
         allResults.push(result);
 
       // Single course code typed in
-      } else if (courseCode && selectedCourses.length === 0) {
+      } else if (courseCode && selectedCourses.length === 0 && selectedPrograms.length === 0) {
         setLoadingMessage(`Fetching and analyzing course: ${courseCode}...`);
         const analyzeText = await fetchCourseText(courseCode);
         const metadata = prepareMetadata(courseCode);
@@ -176,7 +216,7 @@ const AuditForm: React.FC = () => {
         allResults.push(result);
 
       // Multiple or selected courses
-      } else if (selectedCourses.length > 0) {
+      } else if (selectedCourses.length > 0 && selectedPrograms.length === 0) {
         for (let i = 0; i < selectedCourses.length; i++) {
           const cCode = selectedCourses[i];
           setLoadingMessage(
@@ -195,10 +235,60 @@ const AuditForm: React.FC = () => {
           const result = await submitAudit(data);
           allResults.push(result);
         }
-      }
+      } else if (selectedPrograms.length > 0) {
+        for (let i = 0; i < selectedPrograms.length; i++) {
+          const programId = selectedPrograms[i];
+          setLoadingMessage(
+            `Analyzing program ${programId} (${i + 1}/${selectedPrograms.length})...`
+          );
+          
+          try {
+            const detailsArray = await getProgramDetails(programId);
+            
+            if (detailsArray.length === 0) {
+              console.error(`No details found for program ${programId}`);
+              continue;
+            }
+            
+            for (const version of detailsArray) {
+              const versionId = `${programId}-v${version.version}`;
+              setLoadingMessage(
+                `Analyzing program ${programId} version ${version.version} (${i + 1}/${selectedPrograms.length})...`
+              );
+              
+              handleProgramContentFetched(version, versionId);
+              
+              const analyzeText = createProgramTextContent(version);
+              
+              const metadata = {
+                programId: programId,
+                programVersion: version.version,
+                programTitle: version.displayName,
+                programDescription: version.textDescription,
+                programLevel: version.programLevelDescription,
+                programCollege: version.collegeName,
+                programDepartment: version.collegeDepartment,
+                programExpirationDate: version.versionExpirationDate,
+                programURL: `https://www.phoenix.edu/programs/${programId.toLowerCase().replace('/', '-')}.html`
+              };
+              
+              const data = {
+                source_id: versionId,
+                content_type: "program",
+                text: analyzeText,
+                keywords,
+                metadata,
+              };
+              
+              const result = await submitAudit(data);
+              allResults.push(result);
+            }
+          } catch (error) {
+            console.error(`Error processing program ${programId}:`, error);
+          }
+        }      }
 
       setApiResult(allResults);
-
       window.location.href = "/results";
     } catch (error) {
       console.error("Error in handleStartAudit:", error);
@@ -256,6 +346,11 @@ const AuditForm: React.FC = () => {
                 selectedCourses={selectedCourses}
                 onSelectCourse={handleCourseSelection}
                 onCourseContentFetched={handleCourseContentFetched}
+                selectedProgram={selectedProgramData?.code}
+                onProgramSelect={handleProgramSelect}
+                selectedPrograms={selectedPrograms}
+                onProgramSelection={handleProgramSelection}
+                onProgramContentFetched={handleProgramContentFetched}
               />
             </Box>
           )}
@@ -271,31 +366,49 @@ const AuditForm: React.FC = () => {
             mt: 4,
           }}
         >
-          <Button
-            variant="contained"
-            onClick={handleStartAudit}
-            disabled={!isFormValid || loading}
-            sx={{
-              backgroundColor: "#0CBC8B",
-              color: "#FFFFFF",
-              width: "250px",
-              borderRadius: "100px",
-              fontFamily: "Inter, sans-serif",
-              fontSize: "20px",
-              lineHeight: "34px",
-              textTransform: "none",
-              boxShadow: "0px 4px 10px rgba(12, 188, 139, 0.3)",
-              "&:hover": {
-                backgroundColor: "#0aa87a",
-              },
-              "&:disabled": {
-                backgroundColor: "#cccccc",
-                color: "#666666",
-              },
-            }}
-          >
-            {loading ? <CircularProgress size={24} color="inherit" /> : "Start Audit"}
-          </Button>
+          <Box display="flex" alignItems="center">
+            <Button
+              variant="contained"
+              onClick={handleStartAudit}
+              disabled={!isFormValid || loading}
+              sx={{
+                backgroundColor: "#0CBC8B",
+                color: "#FFFFFF",
+                width: "250px",
+                borderRadius: "100px",
+                fontFamily: "Inter, sans-serif",
+                fontSize: "20px",
+                lineHeight: "34px",
+                textTransform: "none",
+                boxShadow: "0px 4px 10px rgba(12, 188, 139, 0.3)",
+                "&:hover": {
+                  backgroundColor: "#0aa87a",
+                },
+                "&:disabled": {
+                  backgroundColor: "#cccccc",
+                  color: "#666666",
+                },
+              }}
+            >
+              {loading ? <CircularProgress size={24} color="inherit" /> : "Start Audit"}
+            </Button>
+            
+            <Tooltip title="View last scan results">
+              <IconButton 
+                onClick={() => navigate("/results")}
+                sx={{ 
+                  ml: 1,
+                  color: "#0CBC8B",
+                  '&:hover': {
+                    backgroundColor: 'rgba(12, 188, 139, 0.08)',
+                  }
+                }}
+              >
+                <HistoryIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          
           {loadingMessage && (
             <Typography variant="body2" sx={{ mt: 1 }}>
               {loadingMessage}
