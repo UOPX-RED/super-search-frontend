@@ -21,7 +21,8 @@ export const useProgramDetails = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  // || "http://localhost:8000";
 
   const getProgramDetails = async (programId: string): Promise<ProgramDetailResponse[]> => {
     try {
