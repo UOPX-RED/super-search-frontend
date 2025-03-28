@@ -70,7 +70,7 @@ function App() {
       //     ? "http://localhost:8000"
       //     : apiUrl;
 
-      window.location.href = `${apiUrl}/api/auth/init`;
+      window.location.href = `${apiUrl}/auth/init`;
     } catch (error) {
       console.error("Login redirect error:", error);
     }

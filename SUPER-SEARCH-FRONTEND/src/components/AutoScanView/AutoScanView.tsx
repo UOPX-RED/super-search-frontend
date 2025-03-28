@@ -1,114 +1,115 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
-import {
-  Box,
-  Typography,
-  MenuItem,
-  FormControl,
-  // TextField,
-  Select,
-  SelectChangeEvent,
-  // Checkbox,
-  // FormControlLabel,
+import { 
+  Box, 
+  Typography, 
+  Tabs,
+  Tab,
 } from "@mui/material";
-import Chips from "../ChipTabs/chiptabs";
+import CourseSelection from "./CourseSelection";
+import ProgramSelection from "./ProgramSelection";
+import { useAllCourses } from "../../hooks/useAllCourses";
+import { useCourseInfo } from "../../hooks/useCourseInfo";
+import { usePrograms } from "../../hooks/usePrograms";
+
+interface Program {
+  code: string;
+  title: string;
+  collegeName: string;
+  levelName: string;
+  isActive: boolean;
+}
 
 interface AutoScanViewProps {
-  courses: Object;
   selectedCourses: string[];
   onSelectCourse: (course: string) => void;
-  // onSelectAll: () => void;
+  onCourseContentFetched: (content: string, courseCode: string) => void;
+  selectedProgram?: string | null;
+  onProgramSelect?: (program: Program | null) => void;
+  selectedPrograms?: string[];
+  onProgramSelection?: (programId: string) => void;
+  onProgramContentFetched?: (content: any, programId: string) => void;
 }
 
 const AutoScanView: React.FC<AutoScanViewProps> = ({
-  courses,
   selectedCourses,
   onSelectCourse,
-  // onSelectAll,
+  onCourseContentFetched,
+  selectedProgram,
+  onProgramSelect = () => {},
+  selectedPrograms = [],
+  onProgramSelection = () => {},
+  onProgramContentFetched = () => {},
 }) => {
-  const handleCourseSelect = (event: SelectChangeEvent) => {
-    const value = event.target.value as string;
-    if (value) {
-      onSelectCourse(value);
-      setCourseCode(value);
-    }
+  const [sourceType, setSourceType] = useState<"course" | "program">("course");
+  
+  const { courses, loading: coursesLoading, error: coursesError } = useAllCourses();
+  const { programs, loading: programsLoading, error: programsError } = usePrograms();
+  const { getCourseDetails } = useCourseInfo();
+  
+  const handleSourceTypeChange = (
+    _event: React.SyntheticEvent, 
+    newValue: "course" | "program"
+  ) => {
+    setSourceType(newValue);
   };
-
-  const COURSE_CODES = Object.keys(courses);
-  const [courseCode, setCourseCode] = useState("");
-
+  
   return (
     <Box mt={2}>
-      <Box display="flex" alignItems="center" mb={2}>
+      <Box mb={3}>
         <Typography
           variant="subtitle1"
           sx={{
             fontFamily: "Inter, sans-serif",
-            fontStyle: "normal",
             fontWeight: 500,
             fontSize: "24px",
             color: "#3C3C3C",
-            mr: 52, 
+            mb: 2
           }}
         >
-          Course Code
+          Select Source Type
         </Typography>
-        {/* <FormControlLabel
-          control={
-            <Checkbox
-              size="small"
-              checked={selectedCourses.length === courses.length && courses.length > 0}
-              onChange={onSelectAll}
-            />
-          }
-          label="Select All"
-        /> */}
-      </Box>
-
-      <FormControl sx={{ width: '610px' }}>
-        {/* <TextField
-        placeholder={"CMGT/556"}
-        value={courseCode}
-        onChange={handleChange}
-        size="small"
-        sx={{ width: '610px' }}
-      /> */}
-        <Select
-          displayEmpty
-          onChange={handleCourseSelect}
-          value={courseCode}
-          size="small"
-          sx={{ mb: 1 }}
+        
+        <Tabs 
+          value={sourceType} 
+          onChange={handleSourceTypeChange}
+          sx={{ 
+            '& .MuiTab-root': {
+              color: '#000000',
+              fontWeight: 500
+            },
+            '& .Mui-selected': {
+              color: '#000000',
+              fontWeight: 600
+            }
+          }}
         >
-          <MenuItem value="">
-            Select course
-          </MenuItem>
-          {COURSE_CODES.map((course) => (
-            <MenuItem key={course} value={course}>
-              {course}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
-      {selectedCourses.length > 0 && (
-        <Box mt="18px">
-          <Typography variant="body1" sx={{ mb: "20px" }}>
-            Total ({selectedCourses.length})
-          </Typography>
-          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-            {selectedCourses.map((course) => (
-              <Chips
-                key={course}
-                label={course}
-                onDelete={() => onSelectCourse(course)}
-                customColor="rgba(54, 124, 255, 0.2)"
-                customTextColor="#292A2E"
-                customHoverColor="rgba(54, 124, 255, 0.4)"
-                showDeleteOnlyOnHover
-              />
-            ))}
-          </Box>
-        </Box>
+          <Tab value="course" label="Courses"/>
+          <Tab value="program" label="Programs" />
+        </Tabs>
+      </Box>
+      
+      {sourceType === "course" ? (
+        <CourseSelection
+          selectedCourses={selectedCourses}
+          onSelectCourse={onSelectCourse}
+          onCourseContentFetched={onCourseContentFetched}
+          courses={courses}
+          coursesLoading={coursesLoading}
+          coursesError={coursesError}
+          getCourseDetails={getCourseDetails}
+        />
+      ) : (
+        <ProgramSelection
+          selectedProgram={selectedProgram}
+          onProgramSelect={onProgramSelect}
+          programs={programs}
+          programsLoading={programsLoading}
+          programsError={programsError}
+          selectedPrograms={selectedPrograms}
+          onProgramSelection={onProgramSelection}
+          onProgramContentFetched={onProgramContentFetched}
+        />
       )}
     </Box>
   );

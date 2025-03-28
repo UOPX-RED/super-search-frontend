@@ -36,6 +36,7 @@ apiService.interceptors.response.use(
       //   window.location.hostname === "localhost"
       //     ? "http://localhost:8000"
       //     : apiUrl;
+      // window.location.href = `${baseUrl}/auth/init`;
       window.location.href = `${apiUrl}/api/auth/init`;
     }
     return Promise.reject(error);

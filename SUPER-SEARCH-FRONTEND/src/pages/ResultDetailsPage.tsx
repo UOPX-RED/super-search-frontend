@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Box, Paper, Typography, Stack, Chip, Container } from "@mui/material";
 import ErrorIcon from "@mui/icons-material/Error";
 import HighlightedSectionCard from "../components/HighlightedSectionCard/HighlightedSectionCard";
@@ -8,10 +8,13 @@ import useSearchStore from "../stores/useStore";
 import "../styles/highlight.css";
 
 const ResultDetailsPage: React.FC = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
   const { apiResult } = useSearchStore.getState();
 
-  if (!apiResult) {
+  const resultsArray = Array.isArray(apiResult) ? apiResult : [apiResult];
+  const result = resultsArray.find((item) => item.id === id);
+  if (!result) {
     return (
       <Box
         sx={{
@@ -22,13 +25,13 @@ const ResultDetailsPage: React.FC = () => {
           alignItems: "center",
         }}
       >
-        <Typography variant="h6">Loading...</Typography>
+        <Typography variant="h6">No details found for ID: {id}</Typography>
       </Box>
     );
   }
 
   const handleBack = () => {
-    navigate("/");
+    navigate("/results");
   };
 
   return (
@@ -101,10 +104,11 @@ const ResultDetailsPage: React.FC = () => {
                   mb: 3,
                 }}
               >
-                {/* @ts-ignore */}
-                Request: {apiResult.metadata.courseCode ? apiResult.metadata.courseCode : apiResult.request_id}
+                {result.metadata?.courseCode
+                  ? result.metadata.courseCode
+                  : result.request_id}
               </Typography>
-              {apiResult.keywords_matched.length > 0 && (
+              {result.keywords_matched?.length > 0 && (
                 <ErrorIcon sx={{ color: "#B3261E", mb: 3 }} />
               )}
             </Box>
@@ -117,39 +121,42 @@ const ResultDetailsPage: React.FC = () => {
                 color: "#3C3C3C",
               }}
             >
-              Highlighted Sections ({apiResult?.highlighted_sections.length})
+              Highlighted Sections ({result?.highlighted_sections?.length || 0})
             </Typography>
           </Box>
           
-          {/* @ts-ignore */}
-          {apiResult.metadata.courseLink && <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              gap: 1,
-              paddingBottom: 2,
-            }}
-          >
-            <Typography
-              variant="body2"
+          {result.metadata?.courseLink && (
+            <Box
               sx={{
-                fontFamily: "Inter, sans-serif",
-                fontWeight: 600,
-                fontSize: "16px",
-                color: "#3C3C3C",
-                mb: 1,
+                display: "flex",
+                flexDirection: { xs: "column", md: "row" },
+                gap: 1,
+                paddingBottom: 2,
               }}
             >
-              Course URL
-            </Typography>
-            <Box display="flex" gap={1} flexWrap="wrap">
-              {/* @ts-ignore */}
-              <a href={apiResult.metadata.courseLink} target="_blank" rel="noopener noreferrer">
-                {/* @ts-ignore */}
-                {apiResult.metadata.courseLink}
-              </a>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontFamily: "Inter, sans-serif",
+                  fontWeight: 600,
+                  fontSize: "16px",
+                  color: "#3C3C3C",
+                  mb: 1,
+                }}
+              >
+                Course URL
+              </Typography>
+              <Box display="flex" gap={1} flexWrap="wrap">
+                <a
+                  href={result.metadata.courseLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {result.metadata.courseLink}
+                </a>
+              </Box>
             </Box>
-          </Box>}
+          )}
 
           <Box
             sx={{
@@ -170,11 +177,11 @@ const ResultDetailsPage: React.FC = () => {
                     mb: 1,
                   }}
                 >
-                  Keywords matched ({apiResult.keywords_matched.length})
+                  Keywords matched ({result.keywords_matched?.length || 0})
                 </Typography>
 
                 <Box display="flex" gap={1} flexWrap="wrap">
-                  {apiResult.keywords_matched.map((kw) => (
+                  {(result.keywords_matched || []).map((kw: string) => (
                     <Chip
                       key={`matched-${kw}`}
                       label={kw}
@@ -213,7 +220,7 @@ const ResultDetailsPage: React.FC = () => {
                     lineHeight: 1.5,
                   }}
                 >
-                  {apiResult.original_text}
+                  {result.original_text}
                 </Typography>
               </Box>
 
@@ -230,32 +237,26 @@ const ResultDetailsPage: React.FC = () => {
                   Additional Info
                 </Typography>
                 <Box sx={{ mt: 2 }}>
-                  {apiResult.content_type !== "default" && <Box sx={{ mb: 1 }}>
-                    <Typography
-                      variant="body2"
-                      fontWeight={600}
-                      display="inline"
-                    >
-                      Content type:
-                    </Typography>{" "}
-                    <Typography variant="body2" display="inline">
-                      {apiResult.content_type}
-                    </Typography>
-                  </Box>}
-                  {/* @ts-ignore */}
-                  {apiResult.metadata.author && <Box sx={{ mb: 1 }}>
-                    <Typography
-                      variant="body2"
-                      fontWeight={600}
-                      display="inline"
-                    >
-                      Author:
-                    </Typography>{" "}
-                    <Typography variant="body2" display="inline">
-                      {/* @ts-ignore */}
-                      {apiResult.metadata.author}
-                    </Typography>
-                  </Box>}
+                  {result.content_type !== "default" && (
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" fontWeight={600} display="inline">
+                        Content type:
+                      </Typography>{" "}
+                      <Typography variant="body2" display="inline">
+                        {result.content_type}
+                      </Typography>
+                    </Box>
+                  )}
+                  {result.metadata?.author && (
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" fontWeight={600} display="inline">
+                        Author:
+                      </Typography>{" "}
+                      <Typography variant="body2" display="inline">
+                        {result.metadata.author}
+                      </Typography>
+                    </Box>
+                  )}
                   <Box sx={{ mb: 1 }}>
                     <Typography
                       variant="body2"
@@ -265,23 +266,74 @@ const ResultDetailsPage: React.FC = () => {
                       Created On:
                     </Typography>{" "}
                     <Typography variant="body2" display="inline">
-                      {apiResult.created_at}
+                      {result.created_at}
                     </Typography>
                   </Box>
-                  {/* @ts-ignore */}
-                  {apiResult.metadata.collegeDepartment && <Box sx={{ mb: 1 }}>
-                    <Typography
-                      variant="body2"
-                      fontWeight={600}
-                      display="inline"
-                    >
-                      Department:
-                    </Typography>{" "}
-                    <Typography variant="body2" display="inline">
-                      {/* @ts-ignore */}
-                      {apiResult.metadata.collegeDepartment}
-                    </Typography>
-                  </Box>}
+                  {result.metadata?.collegeDepartment && (
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" fontWeight={600} display="inline">
+                        Department:
+                      </Typography>{" "}
+                      <Typography variant="body2" display="inline">
+                        {result.metadata.collegeDepartment}
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {result.content_type === "program" && (
+                    <>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" fontWeight={600} display="inline">
+                          Program ID:
+                        </Typography>{" "}
+                        <Typography variant="body2" display="inline">
+                          {result.metadata?.programId || 'N/A'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" fontWeight={600} display="inline">
+                          Version:
+                        </Typography>{" "}
+                        <Typography variant="body2" display="inline">
+                          {result.metadata?.programVersion || 'N/A'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" fontWeight={600} display="inline">
+                          Program Title:
+                        </Typography>{" "}
+                        <Typography variant="body2" display="inline">
+                          {result.metadata?.programTitle || 'N/A'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" fontWeight={600} display="inline">
+                          College:
+                        </Typography>{" "}
+                        <Typography variant="body2" display="inline">
+                          {result.metadata?.programCollege || 'N/A'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" fontWeight={600} display="inline">
+                          Department:
+                        </Typography>{" "}
+                        <Typography variant="body2" display="inline">
+                          {result.metadata?.programDepartment || 'N/A'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" fontWeight={600} display="inline">
+                          Level:
+                        </Typography>{" "}
+                        <Typography variant="body2" display="inline">
+                          {result.metadata?.programLevel || 'N/A'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ mb: 1 }}>
+                      </Box>
+                    </>
+                  )}
                 </Box>
               </Box>
             </Box>
@@ -293,10 +345,10 @@ const ResultDetailsPage: React.FC = () => {
               }}
             >
               <Stack spacing={2}>
-                {apiResult.highlighted_sections.map((section, idx) => (
+                {(result.highlighted_sections || []).map((section: any, idx: number) => (
                   <HighlightedSectionCard
                     key={idx}
-                    matchedWord={apiResult.keywords_matched}
+                    matchedWord={result.keywords_matched}
                     confidence={section.confidence}
                     matchedText={section.matched_text}
                     reason={section.reason}
