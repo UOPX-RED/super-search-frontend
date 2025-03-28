@@ -18,7 +18,8 @@ export const usePrograms = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+//  || "http://localhost:8000";
 
   useEffect(() => {
     const fetchPrograms = async () => {
