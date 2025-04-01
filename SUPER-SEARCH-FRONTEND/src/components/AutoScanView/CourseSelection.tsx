@@ -104,7 +104,7 @@ const CourseSelection: React.FC<CourseSelectionProps> = ({
     
     getCourseDetails(courseCode)
       .then((content) => {
-        console.log(`Content fetched for ${courseCode}:`, content.substring(0, 100) + "...");
+        // console.log(`Content fetched for ${courseCode}:`, content.substring(0, 100) + "...");
         onCourseContentFetched(content, courseCode);
       })
       .catch((error) => {

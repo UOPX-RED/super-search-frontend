@@ -22,7 +22,7 @@ export const useCourseInfo = () => {
       setLoading(true);
       const url = `${backendUrl}/api/course-details?courseCode=${courseCode}`;
       const response = await axios.get(url);
-      console.log('Course details:', response.data);
+      // console.log('Course details:', response.data);
       
       setCourseData(response.data);
       setError(null);

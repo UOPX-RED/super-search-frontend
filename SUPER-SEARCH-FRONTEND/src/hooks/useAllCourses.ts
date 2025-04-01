@@ -22,7 +22,7 @@ export const useAllCourses = () => {
       try {
         setLoading(true);
         const response = await axios.get(`${backendUrl}/api/templates`);
-        console.log('All courses data:', response.data);
+        // console.log('All courses data:', response.data);
         setCourses(response.data);
         setError(null);
       } catch (err) {
