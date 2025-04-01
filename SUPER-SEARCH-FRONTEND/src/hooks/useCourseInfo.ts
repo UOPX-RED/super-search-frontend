@@ -20,7 +20,7 @@ export const useCourseInfo = () => {
   const getCourseDetails = async (courseCode: string): Promise<string> => {
     try {
       setLoading(true);
-      const url = `${backendUrl}/course-details?courseCode=${courseCode}`;
+      const url = `${backendUrl}/api/course-details?courseCode=${courseCode}`;
       const response = await axios.get(url);
       console.log('Course details:', response.data);
       
