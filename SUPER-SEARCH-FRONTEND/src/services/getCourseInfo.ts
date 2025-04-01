@@ -9,7 +9,8 @@ const getCourseInfo = async (courseCode: string) => {
   try {
     const response = await axios.get(url);
     const text = response.data.title + " " + response.data.description;
-    return text;
+    console.log("test:", text);
+    return text
   } catch (error) {
     console.error("Error fetching course info:", error);
     throw error;
