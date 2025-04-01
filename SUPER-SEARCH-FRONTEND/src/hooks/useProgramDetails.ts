@@ -28,7 +28,7 @@ export const useProgramDetails = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("userToken");
-      const url = `${backendUrl}/api/programs-details?programId=${programId}`;
+      const url = `${backendUrl}/api/program-details?programId=${programId}`;
       const response = await axios.get(url, {
         headers: token ? { "X-Azure-Token": token } : {}
       });
