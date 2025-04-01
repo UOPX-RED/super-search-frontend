@@ -32,7 +32,7 @@ export const useProgramDetails = () => {
       const response = await axios.get(url, {
         headers: token ? { "X-Azure-Token": token } : {}
       });
-      console.log('Program details:', response.data);
+      // console.log('Program details:', response.data);
       
       setProgramData(response.data);
       setError(null);

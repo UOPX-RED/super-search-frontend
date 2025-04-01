@@ -26,7 +26,7 @@ export const usePrograms = () => {
       try {
         setLoading(true);
         const response = await axios.get(`${backendUrl}/api/programs`);
-        console.log('Programs data:', response.data);
+        // console.log('Programs data:', response.data);
         
         const programsData = Array.isArray(response.data) 
           ? response.data 
