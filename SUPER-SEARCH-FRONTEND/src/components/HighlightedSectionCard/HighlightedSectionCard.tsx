@@ -9,6 +9,7 @@ interface HighlightedSectionProps {
   reason: string;
   start_index?: number;
   end_index?: number;
+  conceptMatched?: string;
 }
 
 const HighlightedSectionCard: React.FC<HighlightedSectionProps> = ({
@@ -18,6 +19,7 @@ const HighlightedSectionCard: React.FC<HighlightedSectionProps> = ({
   reason,
   start_index,
   end_index,
+  conceptMatched,
 }) => {
   const handleCardClick = () => {
     if (typeof start_index === 'number' && typeof end_index === 'number') {
@@ -35,6 +37,10 @@ const HighlightedSectionCard: React.FC<HighlightedSectionProps> = ({
     : confidence;
 
   const isClickable = typeof start_index === 'number' && typeof end_index === 'number';
+
+  const displayKeywords = conceptMatched 
+    ? [conceptMatched] 
+    : matchedWord;
 
   return (
     <Card
@@ -56,7 +62,7 @@ const HighlightedSectionCard: React.FC<HighlightedSectionProps> = ({
     >
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", flex: 1 }}>
-          {matchedWord.map((word, idx) => (
+          {displayKeywords.map((word, idx) => (
             <Chip
               key={`${word}-${idx}`}
               label={word}

@@ -35,6 +35,7 @@ interface ResultsTableProps {
   handleSort: (field: SortField) => void;
   handleMoreDetails: (id: string) => void;
   courses: any[];
+  searchType?: 'hybrid' | 'keyword' | 'concept';
 }
 
 const ResultsTable: React.FC<ResultsTableProps> = ({
@@ -92,6 +93,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({
                 </div>
               </TableHead>
               <TableHead className="w-[120px]">Program Link</TableHead>
+              <TableHead className="w-[120px]">Confidence</TableHead>
               <TableHead className="w-[100px]">Action</TableHead>
             </>
           ) : (
@@ -125,6 +127,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({
                 </div>
               </TableHead>
               <TableHead className="w-[120px]">Course Link</TableHead>
+              <TableHead className="w-[120px]">Confidence</TableHead>
               <TableHead className="w-[100px]">Action</TableHead>
             </>
           )}
@@ -133,7 +136,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({
       <TableBody>
         {finalResults.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={hasProgramResults ? 7 : 6} className="text-center py-8 text-muted-foreground">
+            <TableCell colSpan={hasProgramResults ? 8 : 7} className="text-center py-8 text-muted-foreground">
               No results found. Try adjusting your filters.
             </TableCell>
           </TableRow>
@@ -151,6 +154,14 @@ const ResultsTable: React.FC<ResultsTableProps> = ({
               const matchedKeywords = (res.keywords_matched || []).join(", ");
               const programLink = res.metadata?.programURL || 
                 `https://www.phoenix.edu/programs/${programId.toLowerCase().replace('/', '-')}.html`;
+              const confidenceScores = res.highlighted_sections?.map(
+                (section: any) => section.confidence ? Math.round(section.confidence * 100) : 0
+              ) || [];
+              const confidence = confidenceScores.length 
+                ? confidenceScores.map((score: any) => `${score}%`).join(', ')
+                : (res.keywords_searched?.length 
+                    ? `${Math.round((res.keywords_matched?.length || 0) / res.keywords_searched.length * 100)}%` 
+                    : "0%");
 
               return (
                 <TableRow key={res.id}>
@@ -181,6 +192,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({
                       "N/A"
                     )}
                   </TableCell>
+                  <TableCell>{confidence}</TableCell>
                   <TableCell>
                     <Button
                       onClick={() => handleMoreDetails(res.id)}
@@ -198,6 +210,14 @@ const ResultsTable: React.FC<ResultsTableProps> = ({
               const collegeName = courseData?.collegeName || res.metadata?.programCollege || "N/A";
               const matchedKeywords = (res.keywords_matched || []).join(", ");
               const courseLink = res.metadata?.courseLink || "";
+              const confidenceScores = res.highlighted_sections?.map(
+                (section: any) => section.confidence ? Math.round(section.confidence * 100) : 0
+              ) || [];
+              const confidence = confidenceScores.length 
+                ? confidenceScores.map((score: any) => `${score}%`).join(', ')
+                : (res.keywords_searched?.length 
+                    ? `${Math.round((res.keywords_matched?.length || 0) / res.keywords_searched.length * 100)}%` 
+                    : "0%");
 
               return (
                 <TableRow key={res.id}>
@@ -227,6 +247,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({
                       "N/A"
                     )}
                   </TableCell>
+                  <TableCell>{confidence}</TableCell>
                   <TableCell>
                     <Button
                       onClick={() => handleMoreDetails(res.id)}

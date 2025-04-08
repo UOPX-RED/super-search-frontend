@@ -5,6 +5,7 @@ import TabSwitcherMUI from "../TabSwitcher/tabswitcher";
 import TagInput from "../TagInput/taginput";
 import ManualInputView from "../ManualInputView/ManualInputView";
 import AutoScanView from "../AutoScanView/AutoScanView";
+import SearchTypeSelector from "../SearchTypeSelector/SearchTypeSelector";
 import axios from "axios";
 import { useCourseInfo } from "../../hooks/useCourseInfo";
 import { useProgramDetails, ProgramDetailResponse } from "../../hooks/useProgramDetails";
@@ -20,12 +21,16 @@ interface Program {
   isActive: boolean;
 }
 
+type SearchType = 'hybrid' | 'keyword' | 'concept';
+
 const AuditForm: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"MANUAL" | "AUTO">("MANUAL");
   const { setApiResult } = useSearchStore.getState();
   const { getCourseDetails } = useCourseInfo();
   const { getProgramDetails } = useProgramDetails();
+
+  const [searchType, setSearchType] = useState<SearchType>("hybrid");
 
   const [keywords, setKeywords] = useState<string[]>([]);
   const [manualText, setManualText] = useState("");
@@ -42,12 +47,14 @@ const AuditForm: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
+  const [csvData, setCsvData] = useState<any[]>([]);
+  const [isCsvMode, setIsCsvMode] = useState(false);
 
   const isFormValid =
     activeTab === "AUTO"
       ? (selectedCourses.length > 0 || courseCode || selectedPrograms.length > 0) && keywords.length > 0
       : activeTab === "MANUAL"
-      ? manualText.trim() !== "" && keywords.length > 0
+      ? (manualText.trim() !== "" || (isCsvMode && csvData.length > 0)) && keywords.length > 0
       : (selectedCourses.length > 0 || selectedPrograms.length > 0) && keywords.length > 0;
 
   const handleAddTag = (tag: string) => {
@@ -86,18 +93,38 @@ const AuditForm: React.FC = () => {
     setProgramContents((prev) => ({ ...prev, [programId]: content }));
   };
 
+  const handleCsvDataProcessed = (data: any[]) => {
+    setCsvData(data);
+    setIsCsvMode(true);
+  };
+
   const submitAudit = async (data: any) => {
     try {
       const token = localStorage.getItem("userToken");
       if (token) {
         axios.defaults.headers.common["X-Azure-Token"] = token;
       }
-      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-      const response = await axios.post(`${BACKEND_URL}/api/analyze`, data);
-      // const response = await axios.post("http://localhost:8000/analyze", data);
+      
+      let endpoint;
+      switch (searchType) {
+        case 'keyword':
+          endpoint = "/keywordsearch";
+          break;
+        case 'concept':
+          endpoint = "/conceptsearch";
+          break;
+        case 'hybrid':
+        default:
+          endpoint = "/analyze";
+          break;
+      }
+      
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+      const response = await axios.post(`${BACKEND_URL}${endpoint}`, data);
+
       return response.data;
     } catch (error) {
-      console.error("Error submitting audit", error);
+      console.error(`Error submitting audit to ${searchType} endpoint`, error);
       throw error;
     }
   };
@@ -121,6 +148,7 @@ const AuditForm: React.FC = () => {
   const prepareMetadata = (cCode?: string, programId?: string) => {
     let metadata: Record<string, any> = {
       [metadataKey.trim() || "programId"]: metadataValue.trim() || "FIN-PM-001",
+      searchType: searchType, 
     };
 
     const metadataElement = document.getElementById("allMetadata") as HTMLInputElement;
@@ -128,7 +156,7 @@ const AuditForm: React.FC = () => {
       try {
         const parsed = JSON.parse(metadataElement.value);
         if (Object.keys(parsed).length > 0) {
-          metadata = parsed;
+          metadata = { ...parsed, searchType };
         }
       } catch (e) {
         console.error("Error parsing metadata:", e);
@@ -182,27 +210,77 @@ const AuditForm: React.FC = () => {
     setLoading(true);
     setLoadingMessage("");
     try {
-      const allResults: any[] = [];
+      const allResults = [];
 
       // MANUAL
       if (activeTab === "MANUAL") {
-        const analyzeText = manualText;
-        const sourceId = "text-input";
-        const metadata = prepareMetadata();
-        const data = {
-          source_id: sourceId,
-          content_type: "default",
-          text: analyzeText,
-          keywords,
-          metadata,
-        };
-        setLoadingMessage("Analyzing manual text...");
-        const result = await submitAudit(data);
-        allResults.push(result);
-
-      // Single course code typed in
+        if (isCsvMode && csvData.length > 0) {
+          for (let i = 0; i < csvData.length; i++) {
+            const row = csvData[i];
+            setLoadingMessage(`Processing CSV row ${i + 1} of ${csvData.length} using ${searchType} search...`);
+            const sourceId = `csv-row-${row.rowIndex}-${Date.now()}`;
+            
+            const metadata: Record<string, any> = {
+              ...prepareMetadata(),
+              rowIndex: row.rowIndex,
+              sourceType: 'csv',
+              fileName: row.fileName || 'uploaded_csv',
+              originalHeaders: row.originalHeaders || [],
+              searchType: searchType, 
+            };
+            Object.entries(row.data).forEach(([key, value]) => {
+              metadata[`csv_${key}`] = value;
+            });
+            
+            const data = {
+              source_id: sourceId,
+              content_type: "csv upload",
+              text: row.text,
+              keywords,
+              metadata,
+            };
+            
+            try {
+              const result = await submitAudit(data);
+              result.csvData = row.data;
+              result.csvRowIndex = row.rowIndex;
+              result.csvHeaders = row.originalHeaders;
+              result.fileName = row.fileName;
+              result.searchType = searchType;
+              
+              allResults.push(result);
+            } catch (error) {
+              console.error(`Error processing row ${row.rowIndex}:`, error);
+              allResults.push({
+                id: `error-${sourceId}`,
+                error: `Failed to process row ${row.rowIndex}`,
+                csvData: row.data,
+                csvRowIndex: row.rowIndex,
+                csvHeaders: row.originalHeaders,
+                fileName: row.fileName,
+                status: 'error',
+                searchType: searchType 
+              });
+            }
+          }
+        } else {
+          const analyzeText = manualText;
+          const sourceId = "text-input";
+          const metadata = prepareMetadata();
+          const data = {
+            source_id: sourceId,
+            content_type: "default",
+            text: analyzeText,
+            keywords,
+            metadata,
+          };
+          setLoadingMessage(`Analyzing manual text using ${searchType} search...`);
+          const result = await submitAudit(data);
+          result.searchType = searchType;
+          allResults.push(result);
+        }
       } else if (courseCode && selectedCourses.length === 0 && selectedPrograms.length === 0) {
-        setLoadingMessage(`Fetching and analyzing course: ${courseCode}...`);
+        setLoadingMessage(`Fetching and analyzing course: ${courseCode} using ${searchType} search...`);
         const analyzeText = await fetchCourseText(courseCode);
         const metadata = prepareMetadata(courseCode);
         const data = {
@@ -213,14 +291,14 @@ const AuditForm: React.FC = () => {
           metadata,
         };
         const result = await submitAudit(data);
+        result.searchType = searchType;
         allResults.push(result);
 
-      // Multiple or selected courses
       } else if (selectedCourses.length > 0 && selectedPrograms.length === 0) {
         for (let i = 0; i < selectedCourses.length; i++) {
           const cCode = selectedCourses[i];
           setLoadingMessage(
-            `Analyzing course ${cCode} (${i + 1}/${selectedCourses.length})...`
+            `Analyzing course ${cCode} (${i + 1}/${selectedCourses.length}) using ${searchType} search...`
           );
 
           const analyzeText = await fetchCourseText(cCode);
@@ -233,13 +311,14 @@ const AuditForm: React.FC = () => {
             metadata,
           };
           const result = await submitAudit(data);
+          result.searchType = searchType; 
           allResults.push(result);
         }
       } else if (selectedPrograms.length > 0) {
         for (let i = 0; i < selectedPrograms.length; i++) {
           const programId = selectedPrograms[i];
           setLoadingMessage(
-            `Analyzing program ${programId} (${i + 1}/${selectedPrograms.length})...`
+            `Analyzing program ${programId} (${i + 1}/${selectedPrograms.length}) using ${searchType} search...`
           );
           
           try {
@@ -253,7 +332,7 @@ const AuditForm: React.FC = () => {
             for (const version of detailsArray) {
               const versionId = `${programId}-v${version.version}`;
               setLoadingMessage(
-                `Analyzing program ${programId} version ${version.version} (${i + 1}/${selectedPrograms.length})...`
+                `Analyzing program ${programId} version ${version.version} (${i + 1}/${selectedPrograms.length}) using ${searchType} search...`
               );
               
               handleProgramContentFetched(version, versionId);
@@ -269,7 +348,8 @@ const AuditForm: React.FC = () => {
                 programCollege: version.collegeName,
                 programDepartment: version.collegeDepartment,
                 programExpirationDate: version.versionExpirationDate,
-                programURL: `https://www.phoenix.edu/programs/${programId.toLowerCase().replace('/', '-')}.html`
+                programURL: `https://www.phoenix.edu/programs/${programId.toLowerCase().replace('/', '-')}.html`,
+                searchType: searchType 
               };
               
               const data = {
@@ -281,17 +361,31 @@ const AuditForm: React.FC = () => {
               };
               
               const result = await submitAudit(data);
+              result.searchType = searchType; 
               allResults.push(result);
             }
           } catch (error) {
             console.error(`Error processing program ${programId}:`, error);
           }
-        }      }
+        }      
+      }
 
+      localStorage.setItem('auditResults', JSON.stringify(allResults));
+      localStorage.setItem('lastSearchType', searchType);
+
+      allResults.forEach(result => {
+        if (!result.searchType) {
+          result.searchType = searchType;
+        }
+      });
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       setApiResult(allResults);
-      window.location.href = "/results";
+      
+      const timestamp = new Date().getTime();
+      const encodedSearchType = encodeURIComponent(searchType);
+      window.location.href = `/results?timestamp=${timestamp}&searchType=${encodedSearchType}`;
+
     } catch (error) {
       console.error("Error in handleStartAudit:", error);
     } finally {
@@ -332,7 +426,13 @@ const AuditForm: React.FC = () => {
       <Box mt={2}>
         <TabSwitcherMUI activeTab={activeTab} onChangeTab={setActiveTab} />
 
-        <Box sx={{ minHeight: "200px", mb: 1 }}>
+
+        <SearchTypeSelector 
+          value={searchType} 
+          onChange={(type) => setSearchType(type)} 
+        />
+
+        <Box sx={{ minHeight: "200px", mb: 1, mt: 4 }}>
           {activeTab === "MANUAL" ? (
             <ManualInputView
               textValue={manualText}
@@ -341,6 +441,7 @@ const AuditForm: React.FC = () => {
               onMetadataKeyChange={setMetadataKey}
               metadataValue={metadataValue}
               onMetadataValueChange={setMetadataValue}
+              onCsvDataProcessed={handleCsvDataProcessed}
             />
           ) : (
             <Box>

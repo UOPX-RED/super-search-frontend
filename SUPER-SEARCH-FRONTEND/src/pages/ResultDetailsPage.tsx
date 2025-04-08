@@ -354,6 +354,7 @@ const ResultDetailsPage: React.FC = () => {
                     reason={section.reason}
                     start_index={section.start_index}
                     end_index={section.end_index}
+                    conceptMatched={section.concept_matched}
                   />
                 ))}
               </Stack>
