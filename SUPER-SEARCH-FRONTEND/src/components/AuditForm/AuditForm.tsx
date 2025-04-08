@@ -108,14 +108,14 @@ const AuditForm: React.FC = () => {
       let endpoint;
       switch (searchType) {
         case 'keyword':
-          endpoint = "/keywordsearch";
+          endpoint = "api/keywordsearch";
           break;
         case 'concept':
-          endpoint = "/conceptsearch";
+          endpoint = "api/conceptsearch";
           break;
         case 'hybrid':
         default:
-          endpoint = "/analyze";
+          endpoint = "api/analyze";
           break;
       }
       
