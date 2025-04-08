@@ -120,7 +120,7 @@ const AuditForm: React.FC = () => {
       }
       
       const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
-      const response = await axios.post(`${BACKEND_URL}${endpoint}`, data);
+      const response = await axios.post(`${BACKEND_URL}/${endpoint}`, data);
 
       return response.data;
     } catch (error) {
