@@ -33,6 +33,7 @@ const Template: StoryFn<typeof ManualInputView> = (args) => {
         onMetadataKeyChange={setMetadataKey}
         metadataValue={metadataValue}
         onMetadataValueChange={setMetadataValue}
+        onCsvDataProcessed={(data) => console.log('CSV data processed:', data)}
       />
     </div>
   );
