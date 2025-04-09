@@ -103,7 +103,13 @@ const TagInput: React.FC<TagInputProps> = ({
           {label}
         </Typography>
       )}
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'flex-start', 
+        gap: 1,
+        flexDirection: { xs: 'column', sm: 'row' },
+        width: '100%'
+      }}>
         <TextField
           placeholder={placeholder}
           value={inputValue}
@@ -112,14 +118,19 @@ const TagInput: React.FC<TagInputProps> = ({
           onBlur={handleBlur}
           size="small"
           sx={{ 
-            width: '610px',
+            width: { xs: '100%', sm: '610px' },
+            flexGrow: 1, 
             '& .MuiOutlinedInput-notchedOutline': {
               borderColor: inputValue ? 'primary.main' : 'inherit',
             },
           }}
           helperText={inputValue ? "Press Enter or click elsewhere to add keyword" : ""}
         />
-        <Box sx={{ display: 'flex', mt: 0.5 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          mt: { xs: 1, sm: 0.5 },
+          alignSelf: { xs: 'flex-start', sm: 'center' }
+        }}>
           <IconButton 
             size="small" 
             onClick={handleSaveKeywords}
@@ -152,16 +163,32 @@ const TagInput: React.FC<TagInputProps> = ({
           <Typography variant="body2" sx={{ mb: '24px' }}>
             Total ({tags.length})
           </Typography>
-          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+          <Box 
+            sx={{ 
+              display: "flex", 
+              gap: 1.5, 
+              flexWrap: "wrap", 
+              maxWidth: '100%',
+              width: { xs: '100%', sm: '610px' }
+            }}
+          >
             {tags.map((tag) => (
-              <Chips
-                key={tag}
-                label={tag}
-                onDelete={() => onRemoveTag(tag)}
-                customColor="rgba(252, 0, 0, 0.6)"
-                customTextColor="#292A2E"
-                showDeleteOnlyOnHover={true}
-              />
+              <Box 
+                key={tag} 
+                sx={{ 
+                  mb: 1,
+                  maxWidth: '100%',
+                  wordBreak: 'break-word'
+                }}
+              >
+                <Chips
+                  label={tag}
+                  onDelete={() => onRemoveTag(tag)}
+                  customColor="rgba(252, 0, 0, 0.6)"
+                  customTextColor="#292A2E"
+                  showDeleteOnlyOnHover={true}
+                />
+              </Box>
             ))}
           </Box>
         </Box>
