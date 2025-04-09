@@ -177,18 +177,160 @@ export default function ResultsPage() {
   const handleMoreDetails = (resultId: string) => {
     navigate(`/results/${resultId}`);
   };
+  
+const getMatchSource = (result: AnalysisResult): string => {
+  if (!result.highlighted_sections || result.highlighted_sections.length === 0) {
+    return '-';
+  }
+
+  const matchedKeywords = result.keywords_matched || [];
+  if (matchedKeywords.length === 0) return '-';
+
+  const keywordSources = new Map<string, Set<string>>();
+  
+  matchedKeywords.forEach(keyword => {
+    keywordSources.set(keyword, new Set<string>());
+  });
+
+  result.highlighted_sections.forEach((section: { matched_text: string; column_matched?: string; }) => {
+    const text = section.matched_text || '';
+    let sectionSource = '';
+    
+    if (section.column_matched) {
+      sectionSource = section.column_matched;
+    }
+    else if (result.csvData && csvHeaders?.length > 0) {
+      let foundDirect = false;
+
+      const sortedHeaders = [...csvHeaders].sort((a, b) => {
+        const aVal = (result.csvData?.[a] || '').length;
+        const bVal = (result.csvData?.[b] || '').length;
+        return bVal - aVal;
+      });
+      
+      for (const header of sortedHeaders) {
+        const value = result.csvData[header];
+        if (value && typeof value === 'string' && value.length > 3 && text.includes(value)) {
+          sectionSource = header;
+          foundDirect = true;
+          break;
+        }
+      }
+      
+      if (!foundDirect) {
+        const lowercaseText = text.toLowerCase();
+        const keywordsInText = matchedKeywords.filter(kw => 
+          lowercaseText.includes(kw.toLowerCase())
+        );
+        
+        if (keywordsInText.length > 0) {
+          for (const header of csvHeaders) {
+            const cellValue = String(result.csvData[header] || '').toLowerCase();
+            
+            for (const keyword of keywordsInText) {
+              if (cellValue.includes(keyword.toLowerCase())) {
+                sectionSource = header;
+                foundDirect = true;
+                break;
+              }
+            }
+            
+            if (foundDirect) break;
+          }
+        }
+      }
+      
+      if (!foundDirect) {
+        if (text.includes('ROW ')) {
+          const match = text.match(/ROW (\d+)/i);
+          if (match) {
+            const rowNum = parseInt(match[1]);
+            
+            let bestHeader = '';
+            let bestMatch = 0;
+            
+            for (const header of csvHeaders) {
+              const cellValue = String(result.csvData[header] || '');
+              const matches = [...text.matchAll(new RegExp(cellValue, 'gi'))];
+              
+              if (matches.length > bestMatch && cellValue.length > 2) {
+                bestMatch = matches.length;
+                bestHeader = header;
+              }
+            }
+            
+            if (bestHeader) {
+              sectionSource = bestHeader;
+              foundDirect = true;
+            } else {
+              sectionSource = `Row ${rowNum}`;
+              foundDirect = true;
+            }
+          }
+        }
+      }
+      
+      if (!foundDirect) {
+        for (const header of csvHeaders) {
+          if (text.toLowerCase().includes(header.toLowerCase()) && header.length > 2) {
+            sectionSource = header;
+            foundDirect = true;
+            break;
+          }
+        }
+      }
+      
+      if (!foundDirect) {
+        const lowercaseText = text.toLowerCase();
+        const matchingKeyword = matchedKeywords.find(kw => lowercaseText.includes(kw.toLowerCase()));
+        
+        if (matchingKeyword) {
+          for (const header of csvHeaders) {
+            const cellValue = String(result.csvData[header] || '').toLowerCase();
+            if (cellValue.includes(matchingKeyword.toLowerCase())) {
+              sectionSource = header;
+              foundDirect = true;
+              break;
+            }
+          }
+        }
+      }
+      
+      if (!foundDirect) {
+        const firstFewHeaders = csvHeaders.slice(0, 2).join(', ');
+        sectionSource = firstFewHeaders || '-';
+      }
+    }
+    
+    const lowercaseText = text.toLowerCase();
+    matchedKeywords.forEach(keyword => {
+      if (lowercaseText.includes(keyword.toLowerCase())) {
+        keywordSources.get(keyword)?.add(sectionSource);
+      }
+    });
+  });
+  
+  const formattedSources = matchedKeywords.map(keyword => {
+    const sources = [...(keywordSources.get(keyword) || [])];
+    if (sources.length === 0) return `${keyword}: -`;
+    return `${keyword}: ${sources.join(', ')}`;
+  });
+  
+  return formattedSources.join('; ');
+};
 
   const handleExportCSV = () => {
     if (finalResults.length === 0) return;
     
     if (isCSVData) {
-      const analysisHeaders = ["Keywords_Matched", "Confidence_Scores", "Search_Type"];
+      const analysisHeaders = ["Keywords_Matched", "Match_Source", "Confidence_Scores", "Search_Type"];
       const headers = [...csvHeaders, ...analysisHeaders];
       
       const rows = finalResults.map((res) => {
         const rowValues = csvHeaders.map(header => res.csvData?.[header] || "");
         
         const matchedKeywords = (res.keywords_matched || []).join(", ");
+        const matchSource = getMatchSource(res);
         
         const confidenceScores = res.highlighted_sections?.map(
           (section: any) => section.confidence ? Math.round(section.confidence * 100) : 0
@@ -200,7 +342,7 @@ export default function ResultsPage() {
               ? `${Math.round((res.keywords_matched?.length || 0) / res.keywords_searched.length * 100)}%` 
               : "0%");
         
-        return [...rowValues, matchedKeywords, confidenceDisplay, res.searchType || searchType];
+        return [...rowValues, matchedKeywords, matchSource, confidenceDisplay, res.searchType || searchType];
       });
       
       const csvLines = [
@@ -333,14 +475,22 @@ export default function ResultsPage() {
       '#',
       ...csvHeaders,
       'Matched Keywords',
+      'Match Source',
       'Confidence',
       'Search Type',
       'Actions'
     ];
     
     return (
-      <TableContainer component={Paper} sx={{ mt: 4 }}>
-        <Table>
+      <TableContainer 
+        component={Paper} 
+        sx={{ 
+          mt: 4,
+          overflowX: 'auto',  
+          width: '100%' 
+        }}
+      >
+        <Table sx={{ tableLayout: 'auto' }}>  
           <TableHead>
             <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
               {fullHeaders.map((header, idx) => (
@@ -348,8 +498,8 @@ export default function ResultsPage() {
                   key={idx} 
                   sx={{ 
                     fontWeight: 'bold',
-                    whiteSpace: 'nowrap',
-                    color: '#4a5568'
+                    color: '#4a5568',
+                    whiteSpace: 'normal', 
                   }}
                 >
                   {header}
@@ -382,20 +532,31 @@ export default function ResultsPage() {
                   <TableCell>{idx + 1}</TableCell>
                   
                   {csvHeaders.map((header) => (
-                    <TableCell key={header}>
+                    <TableCell 
+                      key={header}
+                      sx={{
+                        whiteSpace: 'normal',
+                        wordBreak: 'break-word',
+                        minWidth: '100px',
+                      }}
+                    >
                       {result.csvData?.[header] || ''}
                     </TableCell>
                   ))}
                   
-                  <TableCell>
+                  <TableCell sx={{ whiteSpace: 'normal' }}>
                     {(result.keywords_matched || []).join(', ')}
                   </TableCell>
                   
-                  <TableCell>
+                  <TableCell sx={{ whiteSpace: 'normal' }}>
+                    {getMatchSource(result)}
+                  </TableCell>
+                  
+                  <TableCell sx={{ whiteSpace: 'normal' }}>
                     {confidenceDisplay}
                   </TableCell>
                   
-                  <TableCell>
+                  <TableCell sx={{ whiteSpace: 'normal'}}>
                     {resultSearchType}
                   </TableCell>
                   
@@ -442,6 +603,7 @@ export default function ResultsPage() {
           handleMoreDetails={handleMoreDetails}
           courses={courses || []}
           searchType={searchType}
+          getMatchSource={getMatchSource}
         />
       );
     } catch (error) {
