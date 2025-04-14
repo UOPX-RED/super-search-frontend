@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Box, Paper, Typography, Stack, Chip, Container } from "@mui/material";
+import { Box, Paper, Typography, Stack, Chip, Container, Button } from "@mui/material";
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import ErrorIcon from "@mui/icons-material/Error";
 import HighlightedSectionCard from "../components/HighlightedSectionCard/HighlightedSectionCard";
+import FullTextSuggestionsModal from "../components/AISuggestions/FullTextSuggestionsModal";
 import useSearchStore from "../stores/useStore";
 import "../styles/highlight.css";
 
@@ -11,6 +13,7 @@ const ResultDetailsPage: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { apiResult } = useSearchStore.getState();
+  const [fullTextModalOpen, setFullTextModalOpen] = useState(false);
 
   const resultsArray = Array.isArray(apiResult) ? apiResult : [apiResult];
   const result = resultsArray.find((item) => item.id === id);
@@ -61,6 +64,8 @@ const ResultDetailsPage: React.FC = () => {
             sx={{
               display: "flex",
               mb: 2,
+              justifyContent: "space-between",
+              alignItems: "center"
             }}
           >
             <Typography
@@ -76,6 +81,22 @@ const ResultDetailsPage: React.FC = () => {
             >
               Back
             </Typography>
+            
+            <Button
+              variant="outlined"
+              startIcon={<AutoFixHighIcon />}
+              onClick={() => setFullTextModalOpen(true)}
+              sx={{
+                borderColor: 'rgb(0, 179, 115)',
+                color: 'rgb(0, 179, 115)',
+                '&:hover': {
+                  borderColor: 'rgb(0, 159, 105)',
+                  backgroundColor: 'rgba(0, 179, 115, 0.04)'
+                }
+              }}
+            >
+              Improve Full Text
+            </Button>
           </Box>
 
           <Box
@@ -355,11 +376,24 @@ const ResultDetailsPage: React.FC = () => {
                     start_index={section.start_index}
                     end_index={section.end_index}
                     conceptMatched={section.concept_matched}
+                    sourceId={result.source_id}
+                    contentType={result.content_type}
+                    metadata={result.metadata}
                   />
                 ))}
               </Stack>
             </Box>
           </Box>
+
+          <FullTextSuggestionsModal
+            open={fullTextModalOpen}
+            onClose={() => setFullTextModalOpen(false)}
+            originalText={result.original_text}
+            keywords={result.keywords_matched || []}
+            sourceId={result.source_id}
+            contentType={result.content_type}
+            metadata={result.metadata}
+          />
         </Paper>
       </Container>
     </Box>
