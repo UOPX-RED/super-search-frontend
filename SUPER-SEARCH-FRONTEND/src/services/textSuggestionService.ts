@@ -28,7 +28,7 @@ export const getAlternativeTextSuggestions = async (payload: any) => {
     
     console.log("Formatted payload:", formattedPayload);
     
-    const response = await apiService.post("/alternate-text-suggestion", formattedPayload, {
+    const response = await apiService.post("/api/alternate-text-suggestion", formattedPayload, {
       headers: {
         "Content-Type": "application/json"
       }
@@ -100,7 +100,7 @@ export const getFullTextAlternatives = async (payload: any) => {
     console.log("Formatted payload:", formattedPayload);
     
     // Call the API
-    const response = await apiService.post("/full-sentence-suggestion", formattedPayload, {
+    const response = await apiService.post("/api/full-sentence-suggestion", formattedPayload, {
       headers: {
         "Content-Type": "application/json"
       }

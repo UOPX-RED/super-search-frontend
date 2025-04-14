@@ -100,7 +100,7 @@ const FullTextSuggestionsModal: React.FC<FullTextSuggestionsModalProps> = ({
       const token = localStorage.getItem("userToken");
       const headers = token ? { "X-Azure-Token": token } : {};
       
-      const response = await axios.post(`${BACKEND_URL}/full-sentence-suggestion`, payload, {
+      const response = await axios.post(`${BACKEND_URL}/api/full-sentence-suggestion`, payload, {
         headers: {
           "Content-Type": "application/json",
           ...headers
