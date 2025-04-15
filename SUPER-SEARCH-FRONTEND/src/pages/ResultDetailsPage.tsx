@@ -366,21 +366,53 @@ const ResultDetailsPage: React.FC = () => {
               }}
             >
               <Stack spacing={2}>
-                {(result.highlighted_sections || []).map((section: any, idx: number) => (
-                  <HighlightedSectionCard
-                    key={idx}
-                    matchedWord={result.keywords_matched}
-                    confidence={section.confidence}
-                    matchedText={section.matched_text}
-                    reason={section.reason}
-                    start_index={section.start_index}
-                    end_index={section.end_index}
-                    conceptMatched={section.concept_matched}
-                    sourceId={result.source_id}
-                    contentType={result.content_type}
-                    metadata={result.metadata}
-                  />
-                ))}
+                {(result.highlighted_sections || []).map((section: any, idx: number) => {
+                  let sectionKeywords = [];
+                  
+                  if (section.concept_matched) {
+                    if (typeof section.concept_matched === 'string') {
+                      sectionKeywords.push(section.concept_matched);
+                    } else if (Array.isArray(section.concept_matched)) {
+                      sectionKeywords = [...section.concept_matched];
+                    }
+                  }
+                  
+                  if (section.reason && section.reason.includes('concept of')) {
+                    const regex = /concept of ['"]?([^'".,]+)['"]?/gi;
+                    let match;
+                    while ((match = regex.exec(section.reason)) !== null) {
+                      if (match[1]) {
+                        sectionKeywords.push(match[1].trim());
+                      }
+                    }
+                  }
+                  
+                  if (sectionKeywords.length === 0 && section.matched_text && result.keywords_matched) {
+                    const lowerText = section.matched_text.toLowerCase();
+                    sectionKeywords = result.keywords_matched.filter((kw: string) => 
+                      lowerText.includes(kw.toLowerCase())
+                    );
+                  }
+                  
+                  sectionKeywords = [...new Set(sectionKeywords)];
+                  
+                  const displayKeywords = sectionKeywords.length > 0 ? sectionKeywords : result.keywords_matched;
+                  return (
+                    <HighlightedSectionCard
+                      key={idx}
+                      matchedWord={displayKeywords}
+                      confidence={section.confidence}
+                      matchedText={section.matched_text}
+                      reason={section.reason}
+                      start_index={section.start_index}
+                      end_index={section.end_index}
+                      conceptMatched={section.concept_matched}
+                      sourceId={result.source_id}
+                      contentType={result.content_type}
+                      metadata={result.metadata}
+                    />
+                  );
+                })}
               </Stack>
             </Box>
           </Box>

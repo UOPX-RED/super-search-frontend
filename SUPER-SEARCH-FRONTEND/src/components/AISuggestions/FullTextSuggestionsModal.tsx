@@ -326,9 +326,11 @@ const FullTextSuggestionsModal: React.FC<FullTextSuggestionsModalProps> = ({
                     bgcolor: 'rgba(0, 0, 0, 0.02)',
                     border: '1px solid rgba(0, 0, 0, 0.1)',
                     whiteSpace: 'pre-line',
-                    minHeight: '60vh',
-                    maxHeight: 'calc(80vh - 200px)',
-                    overflow: 'auto'
+                    overflow: 'auto',
+                    ...(viewMode === 'split' && {
+                      // minHeight: '60vh',
+                      maxHeight: 'calc(80vh - 200px)',
+                    })
                   }}
                 >
                   <Typography 
@@ -407,13 +409,14 @@ const FullTextSuggestionsModal: React.FC<FullTextSuggestionsModalProps> = ({
                   sx={{
                     p: 3,
                     borderRadius: 2,
-                    bgcolor: 'rgba(0, 179, 115, 0.04)',
-                    border: '1px solid rgba(0, 179, 115, 0.2)',
+                    bgcolor: 'rgba(0, 0, 0, 0.02)',
+                    border: '1px solid rgba(0, 0, 0, 0.1)',
                     whiteSpace: 'pre-line',
-                    minHeight: '60vh',
-                    maxHeight: 'calc(80vh - 200px)',
                     overflow: 'auto',
-                    flex: 1
+                    ...(viewMode === 'split' && {
+                      // minHeight: '60vh',
+                      maxHeight: 'calc(80vh - 200px)',
+                    })
                   }}
                 >
                   <Typography 
