@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { 
   Modal, Paper, Box, Typography, IconButton, Chip, 
   CircularProgress, Button, TextField
@@ -41,6 +41,8 @@ const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({
   const [customPrompt, setCustomPrompt] = useState<string>("");
   const [showCustomPrompt, setShowCustomPrompt] = useState(false);
 
+  const [selectedText, setSelectedText] = useState("");
+
   const handleSafeClose = () => {
     try {
       if (showCustomPrompt) {
@@ -55,12 +57,6 @@ const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({
     }
   };
 
-  useEffect(() => {
-    if (open && suggestions.length === 0) {
-      fetchSuggestions();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
 
   const formatAlternative = (alt: any): string => {
     if (alt === null || alt === undefined) return '';
@@ -75,21 +71,26 @@ const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({
   };
 
   const fetchSuggestions = async (useCustomPrompt = false) => {
+    if (!selectedText.trim()) {
+      setError("Please select some text from the original passage above.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     
     try {
       const keyword = displayKeywords && displayKeywords.length > 0 
         ? displayKeywords[0]
-        : "the highlighted text";
+        : "this text";
       
-      const defaultPrompt = `Please provide 3-5 alternative ways to express "${matchedText}" that avoid using terms related to ${keyword}. 
+      const defaultPrompt = `Please provide 3-5 alternative ways to express "${selectedText}" that avoid using terms related to ${keyword}. 
       Keep the educational context and meaning intact. Be creative and offer substantively different alternatives.`;
       
       const payload = {
         source_id: sourceId || "highlighted-text",
         content_type: contentType || "text",
-        sentence: matchedText,
+        sentence: selectedText,
         keywords: displayKeywords,
         metadata: metadata || {},
         req_prompt: useCustomPrompt && customPrompt ? customPrompt : defaultPrompt
@@ -125,6 +126,11 @@ const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({
     }
   };
 
+  const handleTextSelection = () => {
+    const selection = window.getSelection()?.toString() || "";
+    setSelectedText(selection);
+  };
+
   return (
     <Modal
       open={open}
@@ -158,14 +164,16 @@ const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({
         </Box>
 
         <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Original Text:</Typography>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Original Text (Select a phrase below):</Typography>
           <Paper
             variant="outlined"
+            onMouseUp={handleTextSelection}
             sx={{
               p: 2,
               bgcolor: 'rgba(0, 0, 0, 0.04)',
               borderRadius: 2,
               fontStyle: 'italic',
+              cursor: 'text'
             }}
           >
             <Typography>{matchedText}</Typography>
@@ -212,15 +220,33 @@ const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({
           </Box>
         ) : (
           <>
+
+            {selectedText && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Selected Text:</Typography>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    bgcolor: 'rgba(0, 179, 115, 0.1)',
+                    borderRadius: 2,
+                    fontStyle: 'italic',
+                  }}
+                >
+                  <Typography>{selectedText}</Typography>
+                </Paper>
+              </Box>
+            )}
+
             <Box sx={{ mb: 3 }}>
               {suggestions.map((suggestion, index) => (
                 <Box key={index} sx={{ mb: 4, p: 2, bgcolor: 'rgba(0, 179, 115, 0.04)', borderRadius: 2 }}>
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                      Problematic Phrase:
+                      Selected Text:
                     </Typography>
                     <Chip 
-                      label={suggestion.problematicPhrase} 
+                      label={selectedText} 
                       sx={{
                         bgcolor: 'rgba(219, 55, 37, 0.1)',
                         color: '#DB3725',
@@ -253,36 +279,53 @@ const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({
                     ))}
                   </Box>
                   
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                      Reason:
-                    </Typography>
-                    <Typography variant="body2">
-                      {suggestion.reason}
-                    </Typography>
-                  </Box>
-                  
-                  <Box sx={{ mb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Confidence:</span>
-                      <span>{Math.round((suggestion.confidence || 0) * 100)}%</span>
-                    </Typography>
-                    <Box sx={{ width: '100%', bgcolor: 'rgba(0,0,0,0.1)', height: 8, borderRadius: 4 }}>
-                      <Box
-                        sx={{
-                          width: `${Math.round((suggestion.confidence || 0) * 100)}%`,
-                          bgcolor: 'rgb(0, 179, 115)',
-                          height: '100%',
-                          borderRadius: 4
-                        }}
-                      />
+                  {suggestion.reason && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                        Reason:
+                      </Typography>
+                      <Typography variant="body2">
+                        {suggestion.reason}
+                      </Typography>
                     </Box>
-                  </Box>
+                  )}
+                  
+                  {/* Only show confidence if it exists */}
+                  {typeof suggestion.confidence === 'number' && (
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Confidence:</span>
+                        <span>{Math.round(suggestion.confidence * 100)}%</span>
+                      </Typography>
+                      <Box sx={{ width: '100%', bgcolor: 'rgba(0,0,0,0.1)', height: 8, borderRadius: 4 }}>
+                        <Box
+                          sx={{
+                            width: `${Math.round(suggestion.confidence * 100)}%`,
+                            bgcolor: 'rgb(0, 179, 115)',
+                            height: '100%',
+                            borderRadius: 4
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
                 </Box>
               ))}
             </Box>
             
             <Box sx={{ mt: 4 }}>
+              <Button
+                variant="contained"
+                onClick={() => fetchSuggestions()}
+                sx={{
+                  bgcolor: 'rgb(0, 179, 115)',
+                  '&:hover': { bgcolor: 'rgb(0, 159, 105)' },
+                  mr: 2
+                }}
+              >
+                Get Suggestions for Selected Text
+              </Button>
+
               <Button 
                 variant="outlined" 
                 onClick={() => setShowCustomPrompt(!showCustomPrompt)}
@@ -293,7 +336,6 @@ const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({
                     borderColor: 'rgb(0, 159, 105)',
                     backgroundColor: 'rgba(0, 179, 115, 0.04)'
                   },
-                  mb: 2
                 }}
               >
                 {showCustomPrompt ? 'Hide Custom Prompt' : 'Customize Prompt'}
@@ -306,7 +348,7 @@ const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({
                     multiline
                     rows={3}
                     label="Custom Prompt"
-                    placeholder={`Please suggest alternatives for this text that avoid using phrases related to ${displayKeywords[0]} while maintaining the educational context and meaning`}
+                    placeholder={`Please suggest alternatives for this text that avoid using phrases related to ${displayKeywords[0] || 'the given topic'} while maintaining the educational context and meaning`}
                     value={customPrompt}
                     onChange={(e) => setCustomPrompt(e.target.value)}
                     sx={{ mb: 2 }}
