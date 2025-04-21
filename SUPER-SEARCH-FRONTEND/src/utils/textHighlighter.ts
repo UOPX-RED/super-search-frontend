@@ -20,36 +20,29 @@ export const scrollAndHighlightText = (
 
   const text = textElement.textContent || '';
   
-  if (matchedText && matchedText.trim() !== '') {
-    const searchIndex = text.indexOf(matchedText);
+  while (textElement.firstChild) {
+    textElement.removeChild(textElement.firstChild);
+  }
+  
+  startIndex = Math.max(0, Math.min(startIndex, text.length));
+  endIndex = Math.max(startIndex, Math.min(endIndex, text.length));
+
+  if (startIndex === endIndex && matchedText && matchedText.trim() !== '') {
+    const searchIndex = text.toLowerCase().indexOf(matchedText.toLowerCase());
     if (searchIndex >= 0) {
       startIndex = searchIndex;
       endIndex = searchIndex + matchedText.length;
     }
   }
-  
-  startIndex = Math.max(0, Math.min(startIndex, text.length));
-  endIndex = Math.max(startIndex, Math.min(endIndex, text.length));
-  
-  const fragment = document.createDocumentFragment();
-  
-  if (startIndex > 0) {
-    fragment.appendChild(document.createTextNode(text.substring(0, startIndex)));
-  }
-  
+  const beforeText = document.createTextNode(text.substring(0, startIndex));
   const highlightSpan = document.createElement('span');
   highlightSpan.className = 'highlight-active';
   highlightSpan.textContent = text.substring(startIndex, endIndex);
-  fragment.appendChild(highlightSpan);
-  
-  if (endIndex < text.length) {
-    fragment.appendChild(document.createTextNode(text.substring(endIndex)));
-  }
-  
-  while (textElement.firstChild) {
-    textElement.removeChild(textElement.firstChild);
-  }
-  textElement.appendChild(fragment);
+  const afterText = document.createTextNode(text.substring(endIndex));
+
+  textElement.appendChild(beforeText);
+  textElement.appendChild(highlightSpan);
+  textElement.appendChild(afterText);
 
   highlightSpan.scrollIntoView({
     behavior: 'smooth',

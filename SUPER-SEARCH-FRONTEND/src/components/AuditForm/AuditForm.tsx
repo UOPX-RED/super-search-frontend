@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from "react";
-import { Box, Typography, Button, CircularProgress, IconButton, Tooltip } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import { Box, Typography, Button, CircularProgress } from "@mui/material";
 import TabSwitcherMUI from "../TabSwitcher/tabswitcher";
 import TagInput from "../TagInput/taginput";
 import ManualInputView from "../ManualInputView/ManualInputView";
@@ -9,9 +9,8 @@ import SearchTypeSelector from "../SearchTypeSelector/SearchTypeSelector";
 import axios from "axios";
 import { useCourseInfo } from "../../hooks/useCourseInfo";
 import { useProgramDetails, ProgramDetailResponse } from "../../hooks/useProgramDetails";
-import HistoryIcon from '@mui/icons-material/History';
 import { useNavigate } from "react-router-dom";
-import useSearchStore from "../../stores/useStore";
+import useSearchStore from "../../stores/useSearchStore";
 
 interface Program {
   code: string;
@@ -26,11 +25,9 @@ type SearchType = 'hybrid' | 'keyword' | 'concept';
 const AuditForm: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"MANUAL" | "AUTO">("MANUAL");
-  const { setApiResult } = useSearchStore.getState();
+  const { searchType, setSearchType, setApiResult } = useSearchStore();
   const { getCourseDetails } = useCourseInfo();
   const { getProgramDetails } = useProgramDetails();
-
-  const [searchType, setSearchType] = useState<SearchType>("hybrid");
 
   const [keywords, setKeywords] = useState<string[]>([]);
   const [manualText, setManualText] = useState("");
@@ -49,6 +46,14 @@ const AuditForm: React.FC = () => {
   const [loadingMessage, setLoadingMessage] = useState("");
   const [csvData, setCsvData] = useState<any[]>([]);
   const [isCsvMode, setIsCsvMode] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const searchTypeParam = params.get('searchType') as SearchType | null;
+    if (searchTypeParam && ['hybrid', 'keyword', 'concept'].includes(searchTypeParam)) {
+      setSearchType(searchTypeParam as SearchType);
+    }
+  }, [setSearchType]);
 
   const isFormValid =
     activeTab === "AUTO"
@@ -98,6 +103,10 @@ const AuditForm: React.FC = () => {
     setIsCsvMode(true);
   };
 
+  const handleSearchTypeChange = (type: SearchType) => {
+    setSearchType(type);
+  };
+
   const submitAudit = async (data: any) => {
     try {
       const token = localStorage.getItem("userToken");
@@ -118,6 +127,11 @@ const AuditForm: React.FC = () => {
           endpoint = "api/analyze";
           break;
       }
+      
+      if (!data.metadata) {
+        data.metadata = {};
+      }
+      data.metadata.searchType = searchType;
       
       const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
       const response = await axios.post(`${BACKEND_URL}/${endpoint}`, data);
@@ -246,7 +260,9 @@ const AuditForm: React.FC = () => {
               result.csvRowIndex = row.rowIndex;
               result.csvHeaders = row.originalHeaders;
               result.fileName = row.fileName;
-              result.searchType = searchType;
+              if (!result.searchType) {
+                result.searchType = searchType;
+              }
               
               allResults.push(result);
             } catch (error) {
@@ -276,7 +292,9 @@ const AuditForm: React.FC = () => {
           };
           setLoadingMessage(`Analyzing manual text using ${searchType} search...`);
           const result = await submitAudit(data);
-          result.searchType = searchType;
+          if (!result.searchType) {
+            result.searchType = searchType;
+          }
           allResults.push(result);
         }
       } else if (courseCode && selectedCourses.length === 0 && selectedPrograms.length === 0) {
@@ -291,7 +309,9 @@ const AuditForm: React.FC = () => {
           metadata,
         };
         const result = await submitAudit(data);
-        result.searchType = searchType;
+        if (!result.searchType) {
+          result.searchType = searchType;
+        }
         allResults.push(result);
 
       } else if (selectedCourses.length > 0 && selectedPrograms.length === 0) {
@@ -311,7 +331,9 @@ const AuditForm: React.FC = () => {
             metadata,
           };
           const result = await submitAudit(data);
-          result.searchType = searchType; 
+          if (!result.searchType) {
+            result.searchType = searchType;
+          } 
           allResults.push(result);
         }
       } else if (selectedPrograms.length > 0) {
@@ -361,7 +383,9 @@ const AuditForm: React.FC = () => {
               };
               
               const result = await submitAudit(data);
-              result.searchType = searchType; 
+              if (!result.searchType) {
+                result.searchType = searchType;
+              }
               allResults.push(result);
             }
           } catch (error) {
@@ -370,22 +394,27 @@ const AuditForm: React.FC = () => {
         }      
       }
 
-      localStorage.setItem('auditResults', JSON.stringify(allResults));
-      localStorage.setItem('lastSearchType', searchType);
-
-      allResults.forEach(result => {
-        if (!result.searchType) {
-          result.searchType = searchType;
-        }
-      });
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      setApiResult(allResults);
+      try {
+        // Set last search type in localStorage (small data)
+        localStorage.setItem('lastSearchType', searchType);
+        
+        // Just store the result count and timestamp (small data)
+        localStorage.setItem('resultCount', allResults.length.toString());
+        localStorage.setItem('lastSearchTimestamp', Date.now().toString());
+        
+        // Use the Zustand store's methods that handle the persistence safely
+        setApiResult(allResults);
+        
+      } catch (storageError) {
+        console.warn("Storage error, continuing with in-memory results only:", storageError);
+        // Fall back to just using the store without persistence
+        setApiResult(allResults);
+      }
       
-      const timestamp = new Date().getTime();
-      const encodedSearchType = encodeURIComponent(searchType);
-      window.location.href = `/results?timestamp=${timestamp}&searchType=${encodedSearchType}`;
-
+      // Navigate to results page
+      const timestamp = Date.now();
+      navigate(`/results?timestamp=${timestamp}&searchType=${encodeURIComponent(searchType)}`);
+      
     } catch (error) {
       console.error("Error in handleStartAudit:", error);
     } finally {
@@ -429,7 +458,7 @@ const AuditForm: React.FC = () => {
 
         <SearchTypeSelector 
           value={searchType} 
-          onChange={(type) => setSearchType(type)} 
+          onChange={handleSearchTypeChange} 
         />
 
         <Box sx={{ minHeight: "200px", mb: 1, mt: 4 }}>
@@ -496,7 +525,7 @@ const AuditForm: React.FC = () => {
               {loading ? <CircularProgress size={24} color="inherit" /> : "Start Audit"}
             </Button>
             
-            <Tooltip title="View last scan results">
+            {/* <Tooltip title="View last scan results">
               <IconButton 
                 onClick={() => navigate("/results")}
                 sx={{ 
@@ -509,7 +538,7 @@ const AuditForm: React.FC = () => {
               >
                 <HistoryIcon />
               </IconButton>
-            </Tooltip>
+            </Tooltip> */}
           </Box>
           
           {loadingMessage && (
