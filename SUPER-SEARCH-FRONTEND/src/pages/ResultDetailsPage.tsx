@@ -1,22 +1,42 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Box, Paper, Typography, Stack, Chip, Container, Button } from "@mui/material";
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import ErrorIcon from "@mui/icons-material/Error";
 import HighlightedSectionCard from "../components/HighlightedSectionCard/HighlightedSectionCard";
 import FullTextSuggestionsModal from "../components/AISuggestions/FullTextSuggestionsModal";
-import useSearchStore from "../stores/useStore";
+import useSearchStore from "../stores/useSearchStore";
 import "../styles/highlight.css";
+
+type SearchType = 'hybrid' | 'keyword' | 'concept';
 
 const ResultDetailsPage: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { apiResult } = useSearchStore.getState();
+  const { apiResult, searchType: storeSearchType, setSearchType } = useSearchStore();
   const [fullTextModalOpen, setFullTextModalOpen] = useState(false);
+  const [searchType, setLocalSearchType] = useState<SearchType>(storeSearchType || 'hybrid');
+
+  useEffect(() => {
+    if (id && apiResult) {
+      const resultsArray = Array.isArray(apiResult) ? apiResult : [apiResult];
+      const result = resultsArray.find((item) => item.id === id);
+      if (result) {
+        if (result.searchType) {
+          setLocalSearchType(result.searchType);
+          setSearchType(result.searchType);
+        } else if (result.metadata?.searchType) {
+          setLocalSearchType(result.metadata.searchType as SearchType);
+          setSearchType(result.metadata.searchType as SearchType);
+        }
+      }
+    }
+  }, [id, apiResult, setSearchType]);
 
   const resultsArray = Array.isArray(apiResult) ? apiResult : [apiResult];
-  const result = resultsArray.find((item) => item.id === id);
+  const result = resultsArray.find((item) => item?.id === id);
+  
   if (!result) {
     return (
       <Box
@@ -105,7 +125,7 @@ const ResultDetailsPage: React.FC = () => {
               flexDirection: { xs: "column", md: "row" },
               alignItems: { xs: "flex-start", md: "flex-start" },
               mb: 1,
-              gap: 11,
+              gap: 2,
             }}
           >
             <Box
@@ -127,7 +147,7 @@ const ResultDetailsPage: React.FC = () => {
               >
                 {result.metadata?.courseCode
                   ? result.metadata.courseCode
-                  : result.request_id}
+                  : result.source_id}
               </Typography>
               {result.keywords_matched?.length > 0 && (
                 <ErrorIcon sx={{ color: "#B3261E", mb: 3 }} />
@@ -268,6 +288,14 @@ const ResultDetailsPage: React.FC = () => {
                       </Typography>
                     </Box>
                   )}
+                  <Box sx={{ mb: 1 }}>
+                    <Typography variant="body2" fontWeight={600} display="inline">
+                      Search type:
+                    </Typography>{" "}
+                    <Typography variant="body2" display="inline">
+                      {result.searchType || result.metadata?.searchType || 'hybrid'}
+                    </Typography>
+                  </Box>
                   {result.metadata?.author && (
                     <Box sx={{ mb: 1 }}>
                       <Typography variant="body2" fontWeight={600} display="inline">
@@ -409,7 +437,10 @@ const ResultDetailsPage: React.FC = () => {
                       conceptMatched={section.concept_matched}
                       sourceId={result.source_id}
                       contentType={result.content_type}
-                      metadata={result.metadata}
+                      metadata={{
+                        ...result.metadata,
+                        searchType: result.searchType || result.metadata?.searchType || searchType
+                      }}
                     />
                   );
                 })}
@@ -424,7 +455,10 @@ const ResultDetailsPage: React.FC = () => {
             keywords={result.keywords_matched || []}
             sourceId={result.source_id}
             contentType={result.content_type}
-            metadata={result.metadata}
+            metadata={{
+              ...result.metadata,
+              searchType: result.searchType || result.metadata?.searchType || searchType
+            }}
           />
         </Paper>
       </Container>

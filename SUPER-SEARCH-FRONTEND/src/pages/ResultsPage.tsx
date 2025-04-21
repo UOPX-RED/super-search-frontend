@@ -6,11 +6,12 @@ import { useAllCourses } from '../hooks/useAllCourses';
 import ResultsFilter from '../components/Results/ResultsFilter';
 import ResultsTable from '../components/Results/ResultsTable';
 import { escapeCSV, getCourseName, getProgramName } from '../utils/resultFormatters';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Typography, Box, Chip } from '@mui/material';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Typography, Box, Chip, CircularProgress } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import SearchIcon from '@mui/icons-material/Search';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import axios from 'axios';
 
 interface AnalysisResult {
   id: string;
@@ -38,15 +39,15 @@ export default function ResultsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const apiResult = useSearchStore((state: any) => state.apiResult);
+  const { apiResult, searchType: storeSearchType, setSearchType, setApiResult, resultIds: storeResultIds } = useSearchStore();
   const { courses } = useAllCourses(); 
 
   const searchTypeFromURL = searchParams.get('searchType') as SearchType | null;
   const searchTypeFromState = location.state?.searchType as SearchType | null;
   const searchTypeFromStorage = localStorage.getItem('lastSearchType') as SearchType | null;
   
-  const [searchType, setSearchType] = useState<SearchType>(
-    searchTypeFromURL || searchTypeFromState || searchTypeFromStorage || 'hybrid'
+  const [searchType, setLocalSearchType] = useState<SearchType>(
+    searchTypeFromURL || searchTypeFromState || storeSearchType || searchTypeFromStorage || 'hybrid'
   );
 
   const [resultsData, setResultsData] = useState<AnalysisResult[]>([]);
@@ -56,42 +57,115 @@ export default function ResultsPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [isCSVData, setIsCSVData] = useState(false);
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchResultsFromDB = async (resultIds: string[]) => {
+    if (!resultIds || resultIds.length === 0) {
+      console.log("No result IDs to fetch from database");
+      return [];
+    }
+    
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+    console.log(`Attempting to fetch ${resultIds.length} results from database...`);
+    
+    try {
+      const queryParams = resultIds.map(id => `ids=${encodeURIComponent(id)}`).join('&');
+      const url = `${BACKEND_URL}/results/batch?${queryParams}`;
+      
+      console.log(`Fetching from: ${url}`);
+      const response = await axios.get(url);
+      
+      console.log(`Successfully fetched from database:`, response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching results from database:", error);
+      return [];
+    }
+  };
 
   useEffect(() => {
-    let finalData = apiResult;
-    
-    if (!finalData || !finalData.length) {
-      const storedResults = localStorage.getItem('auditResults');
-      if (storedResults) {
-        finalData = JSON.parse(storedResults);
-      } else {
-        finalData = [];
-      }
+    if ((searchTypeFromURL || searchTypeFromState) && searchTypeFromURL !== storeSearchType) {
+      setSearchType(searchTypeFromURL || searchTypeFromState || 'hybrid');
     }
+  }, [searchTypeFromURL, searchTypeFromState, storeSearchType, setSearchType]);
 
-    const dataArray = Array.isArray(finalData) ? finalData : [finalData];
-    
-    if (dataArray.length > 0 && dataArray[0].searchType && !searchType) {
-      setSearchType(dataArray[0].searchType as SearchType);
-    }
-
-    const hasCSVData = dataArray.some(item => item.csvData || item.content_type === 'csv');
-    setIsCSVData(hasCSVData);
-
-    if (hasCSVData) {
-      const firstWithHeaders = dataArray.find(item => item.csvHeaders && item.csvHeaders.length > 0);
-      if (firstWithHeaders && firstWithHeaders.csvHeaders) {
-        setCsvHeaders(firstWithHeaders.csvHeaders);
-      } else {
-        const firstWithData = dataArray.find(item => item.csvData && Object.keys(item.csvData).length > 0);
-        if (firstWithData && firstWithData.csvData) {
-          setCsvHeaders(Object.keys(firstWithData.csvData));
+  useEffect(() => {
+    const loadResults = async () => {
+      // console.log("ResultsPage - Loading results");
+      // console.log("Current apiResult:", apiResult);
+      // console.log("Current resultIds:", storeResultIds);
+      
+      let finalData = apiResult;
+      
+      if ((!finalData || finalData.length === 0) && storeResultIds && storeResultIds.length > 0) {
+        setLoading(true);
+        console.log(`No results in memory but found ${storeResultIds.length} result IDs - fetching from database`);
+        
+        try {
+          const dbResults = await fetchResultsFromDB(storeResultIds);
+          if (dbResults && dbResults.length > 0) {
+            console.log(`Retrieved ${dbResults.length} results from database`);
+            setApiResult(dbResults);
+            finalData = dbResults;
+          } else {
+            console.log("No results returned from database");
+          }
+        } catch (error) {
+          console.error("Error loading results from database:", error);
+        } finally {
+          setLoading(false);
         }
       }
-    }
-
-    setResultsData(dataArray);
-  }, [apiResult, searchType]);
+      
+      const dataArray = Array.isArray(finalData) ? finalData : finalData ? [finalData] : [];
+      // console.log(`Processing ${dataArray.length} results`);
+      
+      if (dataArray.length > 0) {
+        const resultWithType = dataArray.find(item => item && item.searchType);
+        if (resultWithType && resultWithType.searchType) {
+          setLocalSearchType(resultWithType.searchType as SearchType);
+          setSearchType(resultWithType.searchType as SearchType);
+        }
+        else {
+          const resultWithMetadata = dataArray.find(item => item && item.metadata && item.metadata.searchType);
+          if (resultWithMetadata && resultWithMetadata.metadata?.searchType) {
+            setLocalSearchType(resultWithMetadata.metadata.searchType as SearchType);
+            setSearchType(resultWithMetadata.metadata.searchType as SearchType);
+          }
+        }
+      }
+  
+      const hasCSVData = dataArray.some(item => item.csvData || item.content_type === 'csv upload');
+      setIsCSVData(hasCSVData);
+  
+      if (hasCSVData && dataArray.length > 0) {
+        const firstWithHeaders = dataArray.find(item => item.csvHeaders && item.csvHeaders.length > 0);
+        if (firstWithHeaders && firstWithHeaders.csvHeaders) {
+          setCsvHeaders(firstWithHeaders.csvHeaders);
+        } else {
+          const firstWithData = dataArray.find(item => item.csvData && Object.keys(item.csvData).length > 0);
+          if (firstWithData && firstWithData.csvData) {
+            setCsvHeaders(Object.keys(firstWithData.csvData));
+          }
+        }
+      }
+  
+      const normalizedData = dataArray.map(item => {
+        if (!item || !item.searchType) {
+          if (item?.metadata?.searchType) {
+            return { ...item, searchType: item.metadata.searchType };
+          }
+          return { ...item, searchType: searchType };
+        }
+        return item;
+      });
+      
+      setResultsData(normalizedData);
+      // console.log(`Final results data set with ${normalizedData.length} items`);
+    };
+    
+    loadResults();
+  }, [apiResult, searchType, setSearchType, storeResultIds, setApiResult]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -618,6 +692,10 @@ const getMatchSource = (result: AnalysisResult): string => {
     }
   };
 
+  const showResultsNotLoadedMessage = resultsData.length === 0 && 
+    localStorage.getItem('resultCount') && 
+    parseInt(localStorage.getItem('resultCount') || '0') > 0;
+
   return (
     <div className="p-6 overflow-x-auto whitespace-normal">
       {renderSearchTypeChip()}
@@ -629,18 +707,45 @@ const getMatchSource = (result: AnalysisResult): string => {
         setShowMatchedOnly={setShowMatchedOnly}
         handleExportCSV={handleExportCSV}
       />
-
-      <div className="mb-4 text-sm text-muted-foreground">
-        Showing {finalResults.length} of {resultsData.length} results
-        {isCSVData && finalResults.length > 0 && (
-          <span> from CSV file: {finalResults[0].fileName || 'uploaded file'}</span>
-        )}
-      </div>
       
-      {isCSVData ? (
-        renderCSVResultsTable()
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+          <CircularProgress />
+          <Typography variant="body1" sx={{ ml: 2 }}>
+            Loading results from database...
+          </Typography>
+        </Box>
+      )}
+
+      {showResultsNotLoadedMessage ? (
+        <Box sx={{ p: 4, textAlign: 'center', backgroundColor: '#f8f9fa', borderRadius: 2, mt: 2 }}>
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            Results are not available
+          </Typography>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={() => navigate('/')}
+            sx={{ mt: 2 }}
+          >
+            Return to Dashboard
+          </Button>
+        </Box>
       ) : (
-        <ModifiedResultsTable />
+        <>
+          <div className="mb-4 text-sm text-muted-foreground">
+            Showing {finalResults.length} of {resultsData.length} results
+            {isCSVData && finalResults.length > 0 && (
+              <span> from CSV file: {finalResults[0].fileName || 'uploaded file'}</span>
+            )}
+          </div>
+          
+          {isCSVData ? (
+            renderCSVResultsTable()
+          ) : (
+            <ModifiedResultsTable />
+          )}
+        </>
       )}
     </div>
   );

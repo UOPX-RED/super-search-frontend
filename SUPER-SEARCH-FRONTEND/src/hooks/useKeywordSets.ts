@@ -9,7 +9,7 @@ export function useKeywordSets() {
   const [savedSets, setSavedSets] = useState<KeywordSet[]>([]);
 
   useEffect(() => {
-    const savedKeywordSets = sessionStorage.getItem('savedKeywordSets');
+    const savedKeywordSets = localStorage.getItem('savedKeywordSets');
     if (savedKeywordSets) {
       try {
         setSavedSets(JSON.parse(savedKeywordSets));
@@ -29,14 +29,14 @@ export function useKeywordSets() {
     
     const updatedSets = [...savedSets.filter(set => set.name !== name), newSet];
     setSavedSets(updatedSets);
-    sessionStorage.setItem('savedKeywordSets', JSON.stringify(updatedSets));
+    localStorage.setItem('savedKeywordSets', JSON.stringify(updatedSets));
     return true;
   };
 
   const deleteKeywordSet = (name: string) => {
     const updatedSets = savedSets.filter(set => set.name !== name);
     setSavedSets(updatedSets);
-    sessionStorage.setItem('savedKeywordSets', JSON.stringify(updatedSets));
+    localStorage.setItem('savedKeywordSets', JSON.stringify(updatedSets));
   };
 
   return {
