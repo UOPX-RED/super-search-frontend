@@ -5,7 +5,7 @@ interface CourseDetails {
   id: string;
   code: string;
   title: string;
-  description: string;
+  courseDescription: string;
   outlineBody: string;
 }
 
@@ -27,11 +27,18 @@ export const useCourseInfo = () => {
       setCourseData(response.data);
       setError(null);
       
-      const courseDetails = response.data;
-      let combinedText = `${courseDetails.title || ''} ${courseDetails.description || ''} `;
-      
-      if (courseDetails.outlineBody) {
-        combinedText += courseDetails.outlineBody;
+      let combinedText = '';
+
+      if (response.data?.title) {
+        combinedText += response.data.title + ' ';
+      }
+
+      if (response.data?.courseDescription) {
+        combinedText += response.data.courseDescription + ' ';
+      }
+
+      if (response.data?.outlineBody) {
+        combinedText += response.data.outlineBody;
       }
       
       return combinedText;

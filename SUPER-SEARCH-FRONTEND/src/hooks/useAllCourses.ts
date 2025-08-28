@@ -7,6 +7,8 @@ interface Course {
   title: string;
   collegeName: string;
   departmentName: string;
+  courseDescription?: string;
+  description?: string;
 }
 
 export const useAllCourses = () => {
