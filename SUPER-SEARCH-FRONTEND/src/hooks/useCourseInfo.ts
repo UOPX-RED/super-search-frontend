@@ -22,23 +22,23 @@ export const useCourseInfo = () => {
       setLoading(true);
       const url = `${backendUrl}/api/course-details?courseCode=${courseCode}`;
       const response = await axios.get(url);
-      // console.log('Course details:', response.data);
+      const courseDetails = Array.isArray(response.data) ? response.data[0] : response.data;
       
-      setCourseData(response.data);
+      setCourseData(courseDetails);
       setError(null);
       
       let combinedText = '';
-
-      if (response.data?.title) {
-        combinedText += response.data.title + ' ';
+      
+      if (courseDetails?.title) {
+        combinedText += courseDetails.title + ' ';
       }
-
-      if (response.data?.courseDescription) {
-        combinedText += response.data.courseDescription + ' ';
+      
+      if (courseDetails?.courseDescription) {
+        combinedText += courseDetails.courseDescription + ' ';
       }
-
-      if (response.data?.outlineBody) {
-        combinedText += response.data.outlineBody;
+      
+      if (courseDetails.outlineBody) {
+        combinedText += courseDetails.outlineBody;
       }
       
       return combinedText;
